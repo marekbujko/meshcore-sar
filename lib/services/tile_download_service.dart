@@ -84,6 +84,7 @@ class TileDownloadService {
     required int maxZoom,
     required String urlTemplate,
     String? displayName,
+    Map<String, String>? headers,
     int maxConcurrency = 6,
     int rateLimit = 30,
   }) {
@@ -96,6 +97,7 @@ class TileDownloadService {
       maxZoom: maxZoom,
       urlTemplate: urlTemplate,
       displayName: displayName,
+      headers: headers,
       maxConcurrency: maxConcurrency,
       rateLimit: rateLimit,
     );
@@ -110,6 +112,7 @@ class TileDownloadService {
     required int maxZoom,
     required String urlTemplate,
     String? displayName,
+    Map<String, String>? headers,
     required int maxConcurrency,
     required int rateLimit,
   }) async {
@@ -184,7 +187,7 @@ class TileDownloadService {
         break;
       }
 
-      final future = _downloadSingleTile(tile, urlTemplate, styleHash)
+      final future = _downloadSingleTile(tile, urlTemplate, styleHash, headers)
           .then((event) {
         if (!controller.isClosed) {
           controller.add(event);
@@ -220,6 +223,7 @@ class TileDownloadService {
     TileCoord tile,
     String urlTemplate,
     String styleHash,
+    Map<String, String>? extraHeaders,
   ) async {
     final bounds = TileMathService.tileBounds(tile.x, tile.y, tile.z);
 
@@ -241,7 +245,7 @@ class TileDownloadService {
       try {
         final response = await _httpClient.get(
           Uri.parse(url),
-          headers: {'User-Agent': 'MeshCoreSAR/1.0'},
+          headers: {'User-Agent': 'MeshCoreSAR/1.0', ...?extraHeaders},
         );
 
         if (response.statusCode != 200) {

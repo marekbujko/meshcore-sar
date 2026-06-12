@@ -266,6 +266,7 @@ class OfflineTilesProvider extends ChangeNotifier {
       maxZoom: _maxZoom,
       urlTemplate: _selectedLayer.urlTemplate,
       displayName: _selectedLayer.name,
+      headers: _selectedLayer.headers,
     );
 
     await for (final event in stream) {

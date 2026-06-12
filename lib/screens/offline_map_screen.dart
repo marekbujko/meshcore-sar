@@ -114,6 +114,9 @@ class _OfflineMapScreenState extends State<OfflineMapScreen> {
                 children: [
                   TileLayer(
                     urlTemplate: provider.selectedLayer.urlTemplate,
+                    tileProvider: NetworkTileProvider(
+                      headers: provider.selectedLayer.headers ?? const {},
+                    ),
                     userAgentPackageName: 'com.meshcore.sar',
                     maxZoom: provider.selectedLayer.maxZoom,
                   ),

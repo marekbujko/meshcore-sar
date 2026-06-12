@@ -12,6 +12,8 @@ enum MapLayerType {
   // Kept for stored preference compatibility after MBTiles removal.
   vectorMbtiles,
   wmsBase,
+  // Appended last: stored layer preference is the enum index.
+  mapyOutdoor,
 }
 
 class MapLayer {
@@ -20,6 +22,9 @@ class MapLayer {
   final String urlTemplate;
   final String attribution;
   final double maxZoom;
+
+  /// Extra HTTP headers required by the tile server (e.g. Referer).
+  final Map<String, String>? headers;
 
   // WMS specific properties
   final bool isWms;
@@ -36,6 +41,7 @@ class MapLayer {
     required this.urlTemplate,
     required this.attribution,
     required this.maxZoom,
+    this.headers,
     this.isWms = false,
     this.wmsBaseUrl,
     this.wmsLayers,
@@ -64,6 +70,9 @@ class MapLayer {
       case MapLayerType.vectorMbtiles:
         // Legacy value kept only for preference migration compatibility.
         return name;
+      case MapLayerType.mapyOutdoor:
+        // Brand name, not translated.
+        return name;
       case MapLayerType.wmsBase:
         // For WMS layers, use the name (will be localized separately)
         return name;
@@ -84,6 +93,17 @@ class MapLayer {
     urlTemplate: 'https://a.tile.opentopomap.org/{z}/{x}/{y}.png',
     attribution: '© OpenTopoMap (CC-BY-SA)',
     maxZoom: 17.49, // OpenTopoMap maximum (just below level 18)
+  );
+
+  /// Mapy.cz outdoor map: OSM data with LIDAR-based shaded relief.
+  /// The tile server rejects requests without a mapy.com Referer.
+  static const mapyOutdoor = MapLayer(
+    type: MapLayerType.mapyOutdoor,
+    name: 'Mapy.cz Outdoor (OSM + LIDAR)',
+    urlTemplate: 'https://mapserver.mapy.cz/turist-en/retina/{z}-{x}-{y}',
+    attribution: '© Seznam.cz, a.s., © OpenStreetMap contributors',
+    maxZoom: 19,
+    headers: {'Referer': 'https://mapy.com/'},
   );
 
   static const esriWorldImagery = MapLayer(
@@ -160,6 +180,7 @@ class MapLayer {
   static const List<MapLayer> allLayers = [
     openStreetMap,
     openTopoMap,
+    mapyOutdoor,
     esriWorldImagery,
     googleHybrid,
     googleRoadmap,

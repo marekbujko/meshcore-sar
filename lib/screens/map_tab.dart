@@ -63,14 +63,31 @@ class MapTab extends StatefulWidget {
 
 class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
   final MapController _mapController = MapController();
+  static final MapCachingProvider _tileCachingProvider =
+      OfflineMapCachingProvider(
+        BuiltInMapCachingProvider.getOrCreateInstance(
+          maxCacheSize: 10_000_000_000,
+          overrideFreshAge: const Duration(days: 365),
+        ),
+      );
   static final TileProvider _tileProvider = NetworkTileProvider(
-    cachingProvider: OfflineMapCachingProvider(
-      BuiltInMapCachingProvider.getOrCreateInstance(
-        maxCacheSize: 10_000_000_000,
-        overrideFreshAge: const Duration(days: 365),
-      ),
-    ),
+    cachingProvider: _tileCachingProvider,
   );
+  // Providers for layers that need extra HTTP headers (e.g. Mapy.cz Referer),
+  // cached per URL template so they are not recreated on every build.
+  static final Map<String, TileProvider> _headeredTileProviders = {};
+
+  static TileProvider _tileProviderFor(MapLayer layer) {
+    final headers = layer.headers;
+    if (headers == null) return _tileProvider;
+    return _headeredTileProviders.putIfAbsent(
+      layer.urlTemplate,
+      () => NetworkTileProvider(
+        headers: headers,
+        cachingProvider: _tileCachingProvider,
+      ),
+    );
+  }
   // DO NOT create a new LocationTrackingService instance here
   // Use the singleton from AppProvider instead via _locationService getter
   final MapMarkerService _markerService = MapMarkerService();
@@ -2974,7 +2991,7 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                   else if (!_currentLayer.isWms)
                     flutter_map.TileLayer(
                       urlTemplate: _currentLayer.urlTemplate,
-                      tileProvider: _tileProvider,
+                      tileProvider: _tileProviderFor(_currentLayer),
                       userAgentPackageName: 'com.meshcore.sar',
                       maxZoom: _currentLayer.maxZoom,
                     ),
