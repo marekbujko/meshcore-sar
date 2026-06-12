@@ -550,6 +550,37 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     }
   }
 
+  bool get _hasUnsavedChanges =>
+      _radioSettingsDirty || _autoDiscoverySettingsDirty;
+
+  Future<void> _handlePopInvoked(bool didPop, Object? result) async {
+    if (didPop) return;
+
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Discard unsaved changes?'),
+        content: const Text(
+          'You have changes that have not been saved to the device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Keep editing'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Discard'),
+          ),
+        ],
+      ),
+    );
+
+    if (discard == true && mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
   String _autoDiscoverySignature(DeviceInfo deviceInfo) {
     return [
       deviceInfo.manualAddContacts,
@@ -766,6 +797,78 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     }
   }
 
+  Future<bool> _confirmApplyRadioSettings({
+    required int freqKhz,
+    required int bandwidth,
+    required int spreadingFactor,
+    required int codingRate,
+    required int txPower,
+  }) async {
+    final deviceInfo = context.read<ConnectionProvider>().deviceInfo;
+    final oldFreqKhz = deviceInfo.radioFreq;
+    final oldBandwidth = _normalizeBandwidthValue(deviceInfo.radioBw);
+    final oldSpreadingFactor = _normalizeSpreadingFactor(deviceInfo.radioSf);
+    final oldCodingRate = _normalizeCodingRate(deviceInfo.radioCr);
+    final oldTxPower = deviceInfo.txPower;
+
+    String formatFreq(int? khz) =>
+        khz != null ? (khz / 1000).toStringAsFixed(3) : '—';
+
+    final changes = <String>[
+      if (oldFreqKhz != freqKhz)
+        '${AppLocalizations.of(context)!.frequencyMHz}: ${formatFreq(oldFreqKhz)} → ${formatFreq(freqKhz)}',
+      if (oldBandwidth != bandwidth)
+        '${AppLocalizations.of(context)!.bandwidth}: ${oldBandwidth != null ? _bandwidthFromValue(oldBandwidth) : '—'} → ${_bandwidthFromValue(bandwidth)}',
+      if (oldSpreadingFactor != spreadingFactor)
+        '${AppLocalizations.of(context)!.spreadingFactor}: ${oldSpreadingFactor ?? '—'} → $spreadingFactor',
+      if (oldCodingRate != codingRate)
+        '${AppLocalizations.of(context)!.codingRate}: ${oldCodingRate ?? '—'} → $codingRate',
+      if (oldTxPower != txPower)
+        '${AppLocalizations.of(context)!.txPowerDbm}: ${oldTxPower ?? '—'} → $txPower',
+    ];
+
+    if (changes.isEmpty) {
+      return true;
+    }
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Apply radio settings?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            for (final change in changes)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(change),
+              ),
+            const SizedBox(height: 8),
+            Text(
+              'Changing these settings will disconnect you from any mesh nodes not using the same settings.',
+              style: TextStyle(
+                color: Theme.of(dialogContext).colorScheme.error,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Apply'),
+          ),
+        ],
+      ),
+    );
+
+    return confirmed == true;
+  }
+
   Future<void> _saveRadioSettings() async {
     final connectionProvider = context.read<ConnectionProvider>();
     final validator = ValidationService();
@@ -807,6 +910,24 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
 
       // Convert from MHz to kHz for protocol
       final freqKhz = (freqResult.value! * 1000).round();
+
+      // Confirm before applying — wrong radio params knock this node off
+      // the mesh shared with the rest of the team.
+      final confirmed = await _confirmApplyRadioSettings(
+        freqKhz: freqKhz,
+        bandwidth: _bandwidthToValue(_selectedBandwidth),
+        spreadingFactor: _selectedSpreadingFactor,
+        codingRate: _selectedCodingRate,
+        txPower: txPowerResult.value!,
+      );
+      if (!confirmed || !mounted) {
+        if (mounted) {
+          setState(() {
+            _isSavingRadioSettings = false;
+          });
+        }
+        return;
+      }
 
       await connectionProvider.setRadioParams(
         frequency: freqKhz,
@@ -1096,29 +1217,57 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
   }
 
   Future<void> _confirmFactoryReset() async {
+    final deviceInfo = context.read<ConnectionProvider>().deviceInfo;
+    final deviceName = (deviceInfo.selfName ?? deviceInfo.deviceName)?.trim();
+    final confirmationWord = (deviceName == null || deviceName.isEmpty)
+        ? 'WIPE'
+        : deviceName;
+    final confirmationController = TextEditingController();
+
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(AppLocalizations.of(context)!.wipeDeviceData),
-        content: const Text(
-          'This will erase all data on the connected device, including contacts, keys, and saved settings. This cannot be undone.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(AppLocalizations.of(context)!.cancel),
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: Text(AppLocalizations.of(context)!.wipeDeviceData),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'This will erase all data on the connected device, including contacts, keys, and saved settings. This cannot be undone.',
+              ),
+              const SizedBox(height: 12),
+              Text('Type "$confirmationWord" to confirm:'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: confirmationController,
+                autofocus: true,
+                decoration: InputDecoration(hintText: confirmationWord),
+                onChanged: (_) => setDialogState(() {}),
+              ),
+            ],
           ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.error,
-              foregroundColor: Theme.of(context).colorScheme.onError,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(AppLocalizations.of(context)!.cancel),
             ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(AppLocalizations.of(context)!.wipeDevice),
-          ),
-        ],
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              onPressed:
+                  confirmationController.text.trim() == confirmationWord
+                  ? () => Navigator.of(dialogContext).pop(true)
+                  : null,
+              child: Text(AppLocalizations.of(context)!.wipeDevice),
+            ),
+          ],
+        ),
       ),
     );
+    confirmationController.dispose();
 
     if (confirmed != true || !mounted) return;
 
@@ -1367,7 +1516,7 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
     final colorScheme = theme.colorScheme;
     final locationSet = _advertLocationPolicy != 0;
 
-    return Scaffold(
+    final scaffold = Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context)!.deviceSettings)),
       body: ColoredBox(
         color: colorScheme.surface,
@@ -2123,9 +2272,8 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
                           onChanged: (value) {
                             setState(() {
                               _repeatEnabled = value;
-                              _radioSettingsSaved = false;
-                              _radioSettingsError = null;
                             });
+                            _markRadioSettingsDirty();
                           },
                         ),
                       ),
@@ -2374,6 +2522,12 @@ class _DeviceConfigScreenState extends State<DeviceConfigScreen> {
           ),
         ),
       ),
+    );
+
+    return PopScope(
+      canPop: !_hasUnsavedChanges,
+      onPopInvokedWithResult: _handlePopInvoked,
+      child: scaffold,
     );
   }
 

@@ -303,6 +303,45 @@ class ContactsProvider with ChangeNotifier {
       );
   }
 
+  /// Finish a device contact sync started with [prepareForDeviceContactSync].
+  ///
+  /// The device contact list is authoritative: when [deviceListComplete] is
+  /// true, any contact still left in the retained snapshot (i.e. not sent by
+  /// the device during this sync) is deleted locally. Channel pseudo-contacts
+  /// are excluded — they mirror device channel slots and are reconciled by the
+  /// channel sync instead. When the sync was partial (timeout/disconnect),
+  /// nothing is deleted so a flaky link can't wipe valid contacts.
+  void finalizeDeviceContactSync({required bool deviceListComplete}) {
+    if (!deviceListComplete) {
+      if (_retainedContactsForSync.isNotEmpty) {
+        debugPrint(
+          'ℹ️ [ContactsProvider] Partial contact sync - keeping '
+          '${_retainedContactsForSync.length} unconfirmed contact(s)',
+        );
+      }
+      _retainedContactsForSync.clear();
+      return;
+    }
+
+    final staleKeys = _retainedContactsForSync.keys
+        .where((key) => _contacts[key]?.type != ContactType.channel)
+        .where(_contacts.containsKey)
+        .toList();
+    for (final key in staleKeys) {
+      final removed = _contacts.remove(key);
+      debugPrint(
+        '🗑️ [ContactsProvider] Removing contact no longer on device: '
+        '${removed?.advName} (${key.substring(0, 8)}...)',
+      );
+    }
+    _retainedContactsForSync.clear();
+
+    if (staleKeys.isNotEmpty) {
+      _persistContacts();
+      notifyListeners();
+    }
+  }
+
   /// Remove self-contact from loaded contacts (called after BLE connection established)
   void _removeSelfContact(Uint8List devicePublicKey) {
     final selfKeyHex = devicePublicKey
@@ -386,6 +425,10 @@ class ContactsProvider with ChangeNotifier {
   ContactTelemetry? get selfTelemetry => _selfTelemetry;
   List<Contact> get favouriteContacts =>
       _contacts.values.where((c) => c.isFavourite).toList();
+  List<Contact> get favouriteChatContacts =>
+      chatContacts.where((c) => c.isFavourite).toList();
+  List<Contact> get favouriteContactsWithLocation =>
+      favouriteContacts.where((c) => effectiveLocationFor(c) != null).toList();
   List<SavedContactGroup> get savedContactGroups =>
       List<SavedContactGroup>.from(_savedContactGroups)
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));

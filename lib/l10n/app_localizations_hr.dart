@@ -2902,6 +2902,20 @@ class AppLocalizationsHr extends AppLocalizations {
   String get sizeCompressionAndPreview => 'Veličina, kompresija i pregled';
 
   @override
+  String get simpleMode => 'Jednostavni način';
+
+  @override
+  String get simpleModeDescription =>
+      'Samo razgovor i karta s omiljenim kontaktima';
+
+  @override
+  String get simpleModeRequiresLockedDestination =>
+      'Za korištenje jednostavnog načina najprije omogućite „Zaključaj odredište” s kanalom';
+
+  @override
+  String get noFavouriteContacts => 'Nema omiljenih kontakata';
+
+  @override
   String get skip => 'Preskoči';
 
   @override
@@ -3012,4 +3026,411 @@ class AppLocalizationsHr extends AppLocalizations {
 
   @override
   String get regionScopeCleared => 'Opseg regije obrisan';
+
+  @override
+  String get selectDestinationFirst =>
+      'Najprije odaberite kanal, kontakt ili sobu';
+
+  @override
+  String get recipientNoLongerAvailable => 'Primatelj više nije dostupan';
+
+  @override
+  String failedToSendMessage(String error) {
+    return 'Slanje nije uspjelo: $error';
+  }
+
+  @override
+  String get tictactoeDirectOnly =>
+      'Križić-kružić radi samo u izravnim porukama. Najprije odaberite kontakt.';
+
+  @override
+  String get deviceKeyUnavailable => 'Ključ uređaja nije dostupan';
+
+  @override
+  String get imageCompressionFailed => 'Komprimiranje slike nije uspjelo';
+
+  @override
+  String get imageFragmentationFailed => 'Fragmentiranje slike nije uspjelo';
+
+  @override
+  String get failedToAnnounceImage => 'Najava slike nije uspjela';
+
+  @override
+  String get noRecipientSelected => 'Primatelj nije odabran';
+
+  @override
+  String get imageSendFailed => 'Slanje slike nije uspjelo';
+
+  @override
+  String get microphonePermissionRequiredForVoice =>
+      'Za glasovne poruke potrebna je dozvola za mikrofon';
+
+  @override
+  String get recordingDiscarded => 'Snimka je odbačena';
+
+  @override
+  String publicChannelMediaWarning(String mediaType) {
+    return 'Upravo ćete poslati $mediaType na javni kanal. To se ne preporučuje jer sadržaj mogu primiti svi na mesh mreži. Odaberite privatni ili označeni kanal, osim ako je to baš ono što želite.';
+  }
+
+  @override
+  String get selectPrivateChannelToShareLocation =>
+      'Odaberite privatni kanal za dijeljenje lokacije.';
+
+  @override
+  String get stopSharingMyLocation => 'Prestani dijeliti moju lokaciju';
+
+  @override
+  String get shareMyLocation => 'Dijeli moju lokaciju';
+
+  @override
+  String get stopRecording => 'Zaustavi snimanje';
+
+  @override
+  String get recordVoice => 'Snimi glasovnu poruku';
+
+  @override
+  String get moreActions => 'Više radnji';
+
+  @override
+  String get noMessagesInFilter => 'Nema poruka u ovom filtru';
+
+  @override
+  String get noMatchesInFilter => 'Nema rezultata u ovom filtru';
+
+  @override
+  String syncFailed(String error) {
+    return 'Sinkronizacija nije uspjela: $error';
+  }
+
+  @override
+  String get invalidLink => 'Nevažeća poveznica';
+
+  @override
+  String get cannotOpenLink => 'Poveznicu nije moguće otvoriti';
+
+  @override
+  String get failedToOpenLink => 'Otvaranje poveznice nije uspjelo';
+
+  @override
+  String get failedToResendMessage => 'Ponovno slanje poruke nije uspjelo';
+
+  @override
+  String retryFailed(String error) {
+    return 'Ponovni pokušaj nije uspio: $error';
+  }
+
+  @override
+  String get deleteDrawingAndMessage => 'Izbriši crtež i poruku';
+
+  @override
+  String get lastEchoRelay => 'Zadnji odjek – relej';
+
+  @override
+  String get lastEchoPath => 'Zadnji odjek – putanja';
+
+  @override
+  String get lastEchoBytesReport => 'Zadnji odjek – izvještaj o bajtovima';
+
+  @override
+  String get noGpsCoordinatesAvailable => 'GPS koordinate nisu dostupne';
+
+  @override
+  String get notASarMarker => 'Nije SAR marker';
+
+  @override
+  String failedToSaveTemplate(String error) {
+    return 'Spremanje predloška nije uspjelo: $error';
+  }
+
+  @override
+  String get drawingNotFound => 'Crtež nije pronađen';
+
+  @override
+  String get unknownDrawingType => 'Nepoznata vrsta crteža';
+
+  @override
+  String get customMapMarker => 'Prilagođeni marker karte';
+
+  @override
+  String customMapPointLabel(String point) {
+    return 'Točka: $point';
+  }
+
+  @override
+  String mapIdLabel(String id) {
+    return 'ID karte: $id';
+  }
+
+  @override
+  String get cannotFetchVoice => 'Glasovnu poruku nije moguće dohvatiti';
+
+  @override
+  String get senderContactUnknown =>
+      'Kontakt pošiljatelja nije poznat. Najprije sinkronizirajte kontakte.';
+
+  @override
+  String get senderRouteUnknown =>
+      'Ruta pošiljatelja nije poznata. Najprije sinkronizirajte kontakte/putanju.';
+
+  @override
+  String messageTooFar(String hops, String maxHops) {
+    return 'Poruka je predaleko ($hops skokova, najviše $maxHops).';
+  }
+
+  @override
+  String get senderRouteNoPathResponse =>
+      'Ruta pošiljatelja nije odgovorila na provjeru putanje. Sinkronizirajte kontakte/putanju i pokušajte ponovno.';
+
+  @override
+  String get senderRouteNoRawResponse =>
+      'Ruta pošiljatelja nije odgovorila na izravnoj prijenosnoj putanji.';
+
+  @override
+  String voiceFetchOverHops(String hops) {
+    return 'Dohvaćanje glasa preko $hops skokova može potrajati.';
+  }
+
+  @override
+  String get voiceReceiveCanceled => 'Primanje glasa je otkazano';
+
+  @override
+  String get fetchingMissingVoiceFragments =>
+      'Dohvaćanje nedostajućih glasovnih fragmenata';
+
+  @override
+  String get receivingVoice => 'Primanje glasa';
+
+  @override
+  String get cannotFetchImage => 'Sliku nije moguće dohvatiti';
+
+  @override
+  String imageFetchOverHops(String hops) {
+    return 'Dohvaćanje slike preko $hops skokova može potrajati.';
+  }
+
+  @override
+  String get imageAlreadyBeingReceived => 'Slika se već prima';
+
+  @override
+  String get loadImage => 'Učitaj sliku';
+
+  @override
+  String get imageFetchFailedToSendRequest =>
+      'Zahtjev za dohvaćanje slike nije poslan';
+
+  @override
+  String get imageUnavailable => 'Slika trenutačno nije dostupna';
+
+  @override
+  String get imageFetchTimedOut => 'Dohvaćanje slike je isteklo';
+
+  @override
+  String get imageReceiveCanceled => 'Primanje slike je otkazano';
+
+  @override
+  String get closeImagePreview => 'Zatvori pregled slike';
+
+  @override
+  String get recordingReleaseToSend => 'Snimanje... otpustite za slanje glasa';
+
+  @override
+  String get sendingVoice => 'Slanje glasa...';
+
+  @override
+  String get sendLongPressToRecordVoice =>
+      'Pošalji (dugi pritisak za snimanje glasa)';
+
+  @override
+  String get discardRecording => 'Odbaci snimku';
+
+  @override
+  String hopCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count skokova',
+      few: '$count skoka',
+      one: '$count skok',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelsSectionDescription =>
+      'Kanali za emitiranje mesh prometa u blizini';
+
+  @override
+  String get roomsSectionDescription =>
+      'Zajednički prostori za stalnu koordinaciju tima';
+
+  @override
+  String get contactsSectionDescription =>
+      'Osobe i uređaji koje možete izravno dosegnuti';
+
+  @override
+  String get noRecentChatters => 'Nema nedavnih sudionika';
+
+  @override
+  String get public => 'Javno';
+
+  @override
+  String get failedToSendTicTacToeMove => 'Potez križić-kružić nije poslan';
+
+  @override
+  String get youWon => 'Pobijedili ste';
+
+  @override
+  String get opponentWon => 'Protivnik je pobijedio';
+
+  @override
+  String get gameDraw => 'Neriješeno';
+
+  @override
+  String get yourTurn => 'Vi ste na potezu';
+
+  @override
+  String get opponentTurn => 'Protivnik je na potezu';
+
+  @override
+  String get pleaseEnterValidCoordinates => 'Unesite valjane koordinate';
+
+  @override
+  String get locationNotAvailable => 'Lokacija nije dostupna';
+
+  @override
+  String get customCaveMapPoint => 'Prilagođena točka karte špilje';
+
+  @override
+  String get mapPoint => 'Točka karte';
+
+  @override
+  String get fetchingMissingImageFragments =>
+      'Dohvaćanje nedostajućih fragmenata…';
+
+  @override
+  String get loadingImage => 'Učitavanje…';
+
+  @override
+  String get receivingImage => 'Primanje…';
+
+  @override
+  String get tapToLoad => 'Dodirnite za učitavanje';
+
+  @override
+  String get connectDevice => 'Poveži uređaj';
+
+  @override
+  String get chooseTransportSubtitle =>
+      'Odaberite način povezivanja: Bluetooth, WiFi ili serijski';
+
+  @override
+  String get ble => 'BLE';
+
+  @override
+  String get network => 'Mreža';
+
+  @override
+  String get serial => 'Serijski';
+
+  @override
+  String get scan => 'Skeniraj';
+
+  @override
+  String get pressScanToSearchForDevices =>
+      'Pritisnite Skeniraj za traženje uređaja u blizini';
+
+  @override
+  String failedToConnectToDevice(String name) {
+    return 'Povezivanje s uređajem $name nije uspjelo';
+  }
+
+  @override
+  String get unknownDevice => 'Nepoznat uređaj';
+
+  @override
+  String get showingCachedResultsTapRefresh =>
+      'Prikazani su predmemorirani rezultati. Dodirnite osvježi za ponovno skeniranje.';
+
+  @override
+  String scanningLocalNetworkOnPort(int port) {
+    return 'Skeniranje lokalne mreže za MeshCore WiFi uređaje na portu $port';
+  }
+
+  @override
+  String get cancelScanAndAddServer => 'Otkaži skeniranje i dodaj poslužitelj';
+
+  @override
+  String get addServer => 'Dodaj poslužitelj';
+
+  @override
+  String scanningProgressIps(int scanned, String total) {
+    return 'Skeniranje... $scanned/$total IP adresa';
+  }
+
+  @override
+  String get cancelAndEnterManually => 'Otkaži i unesi ručno';
+
+  @override
+  String get noRecentOrDiscoveredServers =>
+      'Još nema nedavnih ili otkrivenih poslužitelja';
+
+  @override
+  String get recentlyUsed => 'Nedavno korišteno';
+
+  @override
+  String get connecting => 'Povezivanje...';
+
+  @override
+  String get discoveredOnThisNetwork => 'Otkriveno na ovoj mreži';
+
+  @override
+  String serverNoLongerAvailable(String host, int port) {
+    return 'Poslužitelj na $host:$port više nije dostupan. Skenirajte ponovno da pronađete aktivne poslužitelje.';
+  }
+
+  @override
+  String failedToConnectToHost(String host, int port) {
+    return 'Povezivanje s $host:$port nije uspjelo';
+  }
+
+  @override
+  String get enterValidIpAddress => 'Unesite valjanu IP adresu';
+
+  @override
+  String get enterValidTcpPort => 'Unesite valjani TCP port';
+
+  @override
+  String get ipAddress => 'IP adresa';
+
+  @override
+  String get tcpPort => 'TCP port';
+
+  @override
+  String get customServerPort => 'Prilagođeni port poslužitelja';
+
+  @override
+  String get chat => 'Razgovor';
+
+  @override
+  String get restoringPreviousLink => 'Obnavljanje prethodne veze';
+
+  @override
+  String get noDeviceConnected => 'Nijedan uređaj nije povezan';
+
+  @override
+  String get sendAdvert => 'Pošalji moj kontakt';
+
+  @override
+  String get advertMode => 'Pošalji moj kontakt';
+
+  @override
+  String get advertModeSubtitle =>
+      'Odaberite koliko daleko trebaju putovati vaši kontaktni podaci.';
+
+  @override
+  String get floodAdvertSent => 'Kontakt poslan preplavljanjem kroz mrežu';
+
+  @override
+  String get directAdvertSent => 'Kontakt poslan izravno obližnjim uređajima';
 }

@@ -100,10 +100,21 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     });
 
     try {
-      await context.read<ConnectionProvider>().discoverNodeType(
-        advertType: advertType,
-      );
+      final connectionProvider = context.read<ConnectionProvider>();
+      connectionProvider.clearError();
+      await connectionProvider.discoverNodeType(advertType: advertType);
       if (!mounted) return;
+      final discoveryError = connectionProvider.error;
+      if (discoveryError != null) {
+        connectionProvider.clearError();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(discoveryError),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
       final l10n = AppLocalizations.of(context)!;
       final label = switch (advertType) {
         _repeaterAdvertType => l10n.repeaterDiscoverySent,
@@ -153,8 +164,10 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           return;
         }
       } else {
+        connectionProvider.clearError();
         await connectionProvider.getContact(advert.publicKey);
-        if (connectionProvider.error == 'Not found') {
+        final resolveError = connectionProvider.error;
+        if (resolveError == 'Not found') {
           connectionProvider.clearError();
           final added = await _addPendingAdvertToRadio(
             advert,
@@ -164,6 +177,23 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
           if (!added) {
             return;
           }
+        } else if (resolveError != null) {
+          // Other failures (timeout, disconnect, ...): surface the error and
+          // leave the advert pending so the user can retry.
+          connectionProvider.clearError();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  AppLocalizations.of(
+                    context,
+                  )!.failedToAddContact(resolveError),
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+          return;
         }
       }
       if ((advert.typeValue ?? 0) == _sensorAdvertType) {
@@ -248,10 +278,12 @@ class _DiscoveryScreenState extends State<DiscoveryScreen> {
     required ContactsProvider contactsProvider,
   }) async {
     final contact = _contactFromPendingAdvert(advert);
+    connectionProvider.clearError();
     await connectionProvider.addOrUpdateContact(contact);
 
     final addError = connectionProvider.error;
     if (addError != null) {
+      connectionProvider.clearError();
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(AppLocalizations.of(context)!.failedToAddContact(addError.toString()))),

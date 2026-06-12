@@ -2897,6 +2897,20 @@ class AppLocalizationsTr extends AppLocalizations {
   String get sizeCompressionAndPreview => 'Boyut, sıkıştırma ve önizleme';
 
   @override
+  String get simpleMode => 'Basit mod';
+
+  @override
+  String get simpleModeDescription =>
+      'Yalnızca favori kişilerle sohbet ve harita';
+
+  @override
+  String get simpleModeRequiresLockedDestination =>
+      'Basit modu kullanmak için önce bir kanalla \"Hedefi kilitle\" seçeneğini etkinleştirin';
+
+  @override
+  String get noFavouriteContacts => 'Favori kişi yok';
+
+  @override
   String get skip => 'Atla';
 
   @override
@@ -3006,4 +3020,405 @@ class AppLocalizationsTr extends AppLocalizations {
 
   @override
   String get regionScopeCleared => 'Bölge kapsamı temizlendi';
+
+  @override
+  String get selectDestinationFirst => 'Önce bir kanal, kişi veya oda seçin';
+
+  @override
+  String get recipientNoLongerAvailable => 'Alıcı artık mevcut değil';
+
+  @override
+  String failedToSendMessage(String error) {
+    return 'Gönderilemedi: $error';
+  }
+
+  @override
+  String get tictactoeDirectOnly =>
+      'XOX yalnızca doğrudan mesajlarda çalışır. Önce bir kişi seçin.';
+
+  @override
+  String get deviceKeyUnavailable => 'Cihaz anahtarı mevcut değil';
+
+  @override
+  String get imageCompressionFailed => 'Resim sıkıştırma başarısız';
+
+  @override
+  String get imageFragmentationFailed => 'Resim parçalama başarısız';
+
+  @override
+  String get failedToAnnounceImage => 'Resim duyurulamadı';
+
+  @override
+  String get noRecipientSelected => 'Alıcı seçilmedi';
+
+  @override
+  String get imageSendFailed => 'Resim gönderilemedi';
+
+  @override
+  String get microphonePermissionRequiredForVoice =>
+      'Sesli mesajlar için mikrofon izni gerekli';
+
+  @override
+  String get recordingDiscarded => 'Kayıt silindi';
+
+  @override
+  String publicChannelMediaWarning(String mediaType) {
+    return 'Genel kanala $mediaType göndermek üzeresiniz. Mesh ağındaki herkes bunu alabileceği için bu önerilmez. Bunu özellikle istemiyorsanız özel veya etiketli bir kanal seçin.';
+  }
+
+  @override
+  String get selectPrivateChannelToShareLocation =>
+      'Konumunuzu paylaşmak için özel bir kanal seçin.';
+
+  @override
+  String get stopSharingMyLocation => 'Konumumu paylaşmayı durdur';
+
+  @override
+  String get shareMyLocation => 'Konumumu paylaş';
+
+  @override
+  String get stopRecording => 'Kaydı durdur';
+
+  @override
+  String get recordVoice => 'Sesli mesaj kaydet';
+
+  @override
+  String get moreActions => 'Diğer işlemler';
+
+  @override
+  String get noMessagesInFilter => 'Bu filtrede mesaj yok';
+
+  @override
+  String get noMatchesInFilter => 'Bu filtrede eşleşme yok';
+
+  @override
+  String syncFailed(String error) {
+    return 'Senkronizasyon başarısız: $error';
+  }
+
+  @override
+  String get invalidLink => 'Geçersiz bağlantı';
+
+  @override
+  String get cannotOpenLink => 'Bağlantı açılamıyor';
+
+  @override
+  String get failedToOpenLink => 'Bağlantı açılamadı';
+
+  @override
+  String get failedToResendMessage => 'Mesaj yeniden gönderilemedi';
+
+  @override
+  String retryFailed(String error) {
+    return 'Yeniden deneme başarısız: $error';
+  }
+
+  @override
+  String get deleteDrawingAndMessage => 'Çizimi ve mesajı sil';
+
+  @override
+  String get lastEchoRelay => 'Son yankı: röle';
+
+  @override
+  String get lastEchoPath => 'Son yankı: yol';
+
+  @override
+  String get lastEchoBytesReport => 'Son yankı: bayt raporu';
+
+  @override
+  String get noGpsCoordinatesAvailable => 'Kullanılabilir GPS koordinatı yok';
+
+  @override
+  String get notASarMarker => 'Bu bir SAR işareti değil';
+
+  @override
+  String failedToSaveTemplate(String error) {
+    return 'Şablon kaydedilemedi: $error';
+  }
+
+  @override
+  String get drawingNotFound => 'Çizim bulunamadı';
+
+  @override
+  String get unknownDrawingType => 'Bilinmeyen çizim türü';
+
+  @override
+  String get customMapMarker => 'Özel harita işareti';
+
+  @override
+  String customMapPointLabel(String point) {
+    return 'Nokta: $point';
+  }
+
+  @override
+  String mapIdLabel(String id) {
+    return 'Harita ID: $id';
+  }
+
+  @override
+  String get cannotFetchVoice => 'Ses alınamıyor';
+
+  @override
+  String get senderContactUnknown =>
+      'Gönderenin kişisi bilinmiyor. Önce kişileri senkronize edin.';
+
+  @override
+  String get senderRouteUnknown =>
+      'Gönderenin rotası bilinmiyor. Önce kişileri/yolu senkronize edin.';
+
+  @override
+  String messageTooFar(String hops, String maxHops) {
+    return 'Mesaj çok uzakta ($hops atlama, en fazla $maxHops).';
+  }
+
+  @override
+  String get senderRouteNoPathResponse =>
+      'Gönderenin rotası yol denetimine yanıt vermedi. Kişileri/yolu senkronize edip yeniden deneyin.';
+
+  @override
+  String get senderRouteNoRawResponse =>
+      'Gönderenin rotası ham aktarım yolunda yanıt vermedi.';
+
+  @override
+  String voiceFetchOverHops(String hops) {
+    return '$hops atlama üzerinden ses alma biraz sürebilir.';
+  }
+
+  @override
+  String get voiceReceiveCanceled => 'Ses alımı iptal edildi';
+
+  @override
+  String get fetchingMissingVoiceFragments => 'Eksik ses parçaları alınıyor';
+
+  @override
+  String get receivingVoice => 'Ses alınıyor';
+
+  @override
+  String get cannotFetchImage => 'Resim alınamıyor';
+
+  @override
+  String imageFetchOverHops(String hops) {
+    return '$hops atlama üzerinden resim alma biraz sürebilir.';
+  }
+
+  @override
+  String get imageAlreadyBeingReceived => 'Resim zaten alınıyor';
+
+  @override
+  String get loadImage => 'Resmi yükle';
+
+  @override
+  String get imageFetchFailedToSendRequest => 'Resim isteği gönderilemedi';
+
+  @override
+  String get imageUnavailable => 'Resim şu anda kullanılamıyor';
+
+  @override
+  String get imageFetchTimedOut => 'Resim alma zaman aşımına uğradı';
+
+  @override
+  String get imageReceiveCanceled => 'Resim alımı iptal edildi';
+
+  @override
+  String get closeImagePreview => 'Resim önizlemesini kapat';
+
+  @override
+  String get recordingReleaseToSend => 'Kaydediliyor... göndermek için bırakın';
+
+  @override
+  String get sendingVoice => 'Ses gönderiliyor...';
+
+  @override
+  String get sendLongPressToRecordVoice =>
+      'Gönder (ses kaydı için basılı tutun)';
+
+  @override
+  String get discardRecording => 'Kaydı sil';
+
+  @override
+  String hopCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count atlama',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelsSectionDescription =>
+      'Yakındaki mesh trafiği için yayın kanalları';
+
+  @override
+  String get roomsSectionDescription =>
+      'Sürekli ekip koordinasyonu için ortak alanlar';
+
+  @override
+  String get contactsSectionDescription =>
+      'Doğrudan ulaşabileceğiniz kişiler ve cihazlar';
+
+  @override
+  String get noRecentChatters => 'Yakın zamanda konuşan yok';
+
+  @override
+  String get public => 'Genel';
+
+  @override
+  String get failedToSendTicTacToeMove => 'XOX hamlesi gönderilemedi';
+
+  @override
+  String get youWon => 'Kazandınız';
+
+  @override
+  String get opponentWon => 'Rakip kazandı';
+
+  @override
+  String get gameDraw => 'Berabere';
+
+  @override
+  String get yourTurn => 'Sıra sizde';
+
+  @override
+  String get opponentTurn => 'Sıra rakipte';
+
+  @override
+  String get pleaseEnterValidCoordinates => 'Geçerli koordinatlar girin';
+
+  @override
+  String get locationNotAvailable => 'Konum mevcut değil';
+
+  @override
+  String get customCaveMapPoint => 'Özel mağara haritası noktası';
+
+  @override
+  String get mapPoint => 'Harita noktası';
+
+  @override
+  String get fetchingMissingImageFragments => 'Eksik parçalar alınıyor…';
+
+  @override
+  String get loadingImage => 'Yükleniyor…';
+
+  @override
+  String get receivingImage => 'Alınıyor…';
+
+  @override
+  String get tapToLoad => 'Yüklemek için dokunun';
+
+  @override
+  String get connectDevice => 'Cihaza bağlan';
+
+  @override
+  String get chooseTransportSubtitle =>
+      'Bluetooth, WiFi veya Seri aktarım seçin';
+
+  @override
+  String get ble => 'BLE';
+
+  @override
+  String get network => 'Ağ';
+
+  @override
+  String get serial => 'Seri';
+
+  @override
+  String get scan => 'Tara';
+
+  @override
+  String get pressScanToSearchForDevices =>
+      'Yakındaki cihazları aramak için tara düğmesine basın';
+
+  @override
+  String failedToConnectToDevice(String name) {
+    return '$name cihazına bağlanılamadı';
+  }
+
+  @override
+  String get unknownDevice => 'Bilinmeyen cihaz';
+
+  @override
+  String get showingCachedResultsTapRefresh =>
+      'Önbelleğe alınmış sonuçlar gösteriliyor. Yeniden taramak için yenile düğmesine dokunun.';
+
+  @override
+  String scanningLocalNetworkOnPort(int port) {
+    return 'Yerel ağda $port bağlantı noktasındaki MeshCore WiFi cihazları taranıyor';
+  }
+
+  @override
+  String get cancelScanAndAddServer => 'Taramayı iptal et ve sunucu ekle';
+
+  @override
+  String get addServer => 'Sunucu ekle';
+
+  @override
+  String scanningProgressIps(int scanned, String total) {
+    return 'Taranıyor... $scanned/$total IP';
+  }
+
+  @override
+  String get cancelAndEnterManually => 'İptal et ve elle gir';
+
+  @override
+  String get noRecentOrDiscoveredServers =>
+      'Henüz son kullanılan veya keşfedilen sunucu yok';
+
+  @override
+  String get recentlyUsed => 'Son kullanılanlar';
+
+  @override
+  String get connecting => 'Bağlanıyor...';
+
+  @override
+  String get discoveredOnThisNetwork => 'Bu ağda keşfedildi';
+
+  @override
+  String serverNoLongerAvailable(String host, int port) {
+    return '$host:$port adresindeki sunucu artık kullanılamıyor. Etkin sunucuları bulmak için lütfen yeniden tarayın.';
+  }
+
+  @override
+  String failedToConnectToHost(String host, int port) {
+    return '$host:$port adresine bağlanılamadı';
+  }
+
+  @override
+  String get enterValidIpAddress => 'Geçerli bir IP adresi girin';
+
+  @override
+  String get enterValidTcpPort => 'Geçerli bir TCP bağlantı noktası girin';
+
+  @override
+  String get ipAddress => 'IP adresi';
+
+  @override
+  String get tcpPort => 'TCP bağlantı noktası';
+
+  @override
+  String get customServerPort => 'Özel sunucu bağlantı noktası';
+
+  @override
+  String get chat => 'Sohbet';
+
+  @override
+  String get restoringPreviousLink => 'Önceki bağlantı geri yükleniyor';
+
+  @override
+  String get noDeviceConnected => 'Bağlı cihaz yok';
+
+  @override
+  String get sendAdvert => 'Kişi bilgimi gönder';
+
+  @override
+  String get advertMode => 'Kişi bilgimi gönder';
+
+  @override
+  String get advertModeSubtitle =>
+      'Kişi bilgilerinizin ne kadar uzağa gideceğini seçin.';
+
+  @override
+  String get floodAdvertSent => 'Kişi bilgisi tüm mesh ağına gönderildi';
+
+  @override
+  String get directAdvertSent => 'Kişi bilgisi yakındaki cihazlara gönderildi';
 }

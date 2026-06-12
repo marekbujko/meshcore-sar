@@ -161,6 +161,14 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
                     eta: eta,
                     pathLen: effectivePathLen,
                     transferCount: transferCount,
+                    fetchingMissingLabel: AppLocalizations.of(
+                      context,
+                    )!.fetchingMissingImageFragments,
+                    loadingLabel: AppLocalizations.of(context)!.loadingImage,
+                    receivingLabel: AppLocalizations.of(
+                      context,
+                    )!.receivingImage,
+                    tapToLoadLabel: AppLocalizations.of(context)!.tapToLoad,
                   ),
                   style: TextStyle(
                     fontSize: 11,
@@ -283,8 +291,8 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
                 ),
                 color: Colors.white70,
                 tooltip: isReceivingData
-                    ? 'Image is already being received'
-                    : 'Load image',
+                    ? AppLocalizations.of(context)!.imageAlreadyBeingReceived
+                    : AppLocalizations.of(context)!.loadImage,
               ),
             ],
           ],
@@ -321,32 +329,34 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     if (resolution.failure == TransmissionTargetFailure.unknownContact) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch image',
-        'Sender contact is unknown. Sync contacts first.',
+        AppLocalizations.of(context)!.cannotFetchImage,
+        AppLocalizations.of(context)!.senderContactUnknown,
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.unknownRoute) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch image',
-        'Sender route is unknown. Sync contacts/path first.',
+        AppLocalizations.of(context)!.cannotFetchImage,
+        AppLocalizations.of(context)!.senderRouteUnknown,
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.tooFar) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch image',
-        'Message is too far (${resolution.hops} hops, max ${resolution.maxHops}).',
+        AppLocalizations.of(context)!.cannotFetchImage,
+        AppLocalizations.of(
+          context,
+        )!.messageTooFar('${resolution.hops}', '${resolution.maxHops}'),
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.unreachable) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch image',
-        'Sender route did not respond to a path check. Sync contacts/path and try again.',
+        AppLocalizations.of(context)!.cannotFetchImage,
+        AppLocalizations.of(context)!.senderRouteNoPathResponse,
       );
       return;
     }
@@ -370,24 +380,26 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
       if (resolution.failure == TransmissionTargetFailure.unknownContact) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch image',
-          'Sender contact is unknown. Sync contacts first.',
+          AppLocalizations.of(context)!.cannotFetchImage,
+          AppLocalizations.of(context)!.senderContactUnknown,
         );
         return;
       }
       if (resolution.failure == TransmissionTargetFailure.unknownRoute) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch image',
-          'Sender route is unknown. Sync contacts/path first.',
+          AppLocalizations.of(context)!.cannotFetchImage,
+          AppLocalizations.of(context)!.senderRouteUnknown,
         );
         return;
       }
       if (resolution.failure == TransmissionTargetFailure.tooFar) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch image',
-          'Message is too far (${resolution.hops} hops, max ${resolution.maxHops}).',
+          AppLocalizations.of(context)!.cannotFetchImage,
+          AppLocalizations.of(
+            context,
+          )!.messageTooFar('${resolution.hops}', '${resolution.maxHops}'),
         );
         return;
       }
@@ -397,8 +409,8 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
       if (!routeVerified) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch image',
-          'Sender route did not respond on the raw transport path.',
+          AppLocalizations.of(context)!.cannotFetchImage,
+          AppLocalizations.of(context)!.senderRouteNoRawResponse,
         );
         return;
       }
@@ -406,7 +418,9 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
 
     if (sender.routeHopCount >= 2) {
       _showToast(
-        'Image fetch over ${sender.routeHopCount} hops may take a while.',
+        AppLocalizations.of(
+          context,
+        )!.imageFetchOverHops('${sender.routeHopCount}'),
       );
     }
 
@@ -415,8 +429,8 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     if (deviceKey == null || deviceKey.length < 6) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch image',
-        'Device key is unavailable.',
+        AppLocalizations.of(context)!.cannotFetchImage,
+        AppLocalizations.of(context)!.deviceKeyUnavailable,
       );
       return;
     }
@@ -459,11 +473,11 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
       );
     } catch (_) {
       if (mounted) {
-        _showToast('Image fetch failed to send request');
+        _showToast(AppLocalizations.of(context)!.imageFetchFailedToSendRequest);
         setState(() {
           _isRequesting = false;
           _isPartialRequest = false;
-          _errorText = 'Image unavailable right now';
+          _errorText = AppLocalizations.of(context)!.imageUnavailable;
         });
       }
       return;
@@ -491,11 +505,11 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
         if (mounted &&
             _isRequesting &&
             !imageProvider.isComplete(envelope.sessionId)) {
-          _showToast('Image fetch timed out');
+          _showToast(AppLocalizations.of(context)!.imageFetchTimedOut);
           setState(() {
             _isRequesting = false;
             _isPartialRequest = false;
-            _errorText = 'Image fetch timed out';
+            _errorText = AppLocalizations.of(context)!.imageFetchTimedOut;
           });
         }
       },
@@ -513,11 +527,11 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     if (!mounted) return;
     _requestTimeoutTimer?.cancel();
     context.read<ip.ImageProvider>().cancelIncomingSession(sessionId);
-    _showToast('Image receive canceled');
+    _showToast(AppLocalizations.of(context)!.imageReceiveCanceled);
     setState(() {
       _isRequesting = false;
       _isPartialRequest = false;
-      _errorText = 'Image receive canceled';
+      _errorText = AppLocalizations.of(context)!.imageReceiveCanceled;
     });
   }
 
@@ -563,6 +577,10 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     required bool isSentByMe,
     required Duration? eta,
     required int transferCount,
+    required String fetchingMissingLabel,
+    required String loadingLabel,
+    required String receivingLabel,
+    required String tapToLoadLabel,
   }) {
     final txEstimate = estimateImageTransmitDuration(
       fragmentCount: envelope.total,
@@ -578,13 +596,13 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     if (isRequesting) {
       final etaLabel = _formatEta(eta);
       final actionLabel = isPartialRequest
-          ? '📥 Fetching missing fragments…'
-          : '📥 Loading…';
+          ? '📥 $fetchingMissingLabel'
+          : '📥 $loadingLabel';
       return '$actionLabel $received/$total · $etaLabel · $txEstimateLabel';
     }
     if (isReceivingData) {
       final etaLabel = _formatEta(eta);
-      return '📥 Receiving… $received/$total · $etaLabel · $txEstimateLabel';
+      return '📥 $receivingLabel $received/$total · $etaLabel · $txEstimateLabel';
     }
     if (isComplete) {
       final base =
@@ -595,7 +613,7 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
     }
     return isSentByMe
         ? '🖼️ ${envelope.width}×${envelope.height} · ${_formatTransferCount(transferCount)} · $txEstimateLabel'
-        : '🖼️ Tap to load · ${envelope.width}×${envelope.height} · $txEstimateLabel';
+        : '🖼️ $tapToLoadLabel · ${envelope.width}×${envelope.height} · $txEstimateLabel';
   }
 
   static String _formatTransmitEstimate(Duration value) {
@@ -634,7 +652,7 @@ class _ImageMessageBubbleState extends State<ImageMessageBubble> {
       context: context,
       barrierColor: Colors.black,
       barrierDismissible: true,
-      barrierLabel: 'Close image preview',
+      barrierLabel: AppLocalizations.of(context)!.closeImagePreview,
       pageBuilder: (dialogContext, animation, secondaryAnimation) => Material(
         color: Colors.black,
         child: Stack(

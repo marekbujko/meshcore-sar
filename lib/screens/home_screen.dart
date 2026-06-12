@@ -1,11 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:vibration/vibration.dart';
 import '../providers/connection_provider.dart';
 import '../providers/app_provider.dart';
 import '../models/device_info.dart' show ConnectionMode, DeviceInfo;
@@ -24,7 +21,6 @@ import 'device_config_screen.dart';
 import 'packet_log_screen.dart';
 import 'live_traffic_screen.dart';
 import 'profiles_screen.dart';
-import '../utils/toast_logger.dart';
 import '../l10n/app_localizations.dart';
 import '../widgets/permission_request_dialog.dart';
 import '../widgets/connection_dialog.dart';
@@ -36,8 +32,6 @@ import '../services/profile_workspace_coordinator.dart';
 import '../services/profiles_feature_service.dart';
 
 enum _HomeTab { messages, contacts, sensors, map }
-
-enum _AdvertMode { flood, direct }
 
 class HomeScreen extends StatefulWidget {
   final Function(AppThemeMode) onThemeChanged;
@@ -70,11 +64,15 @@ class _HomeScreenState extends State<HomeScreen>
   bool _isMapEnabled = true;
   bool _isContactsEnabled = true;
   bool _isSensorsEnabled = false;
+  bool _isSimpleMode = false;
   AppLifecycleState _lifecycleState = AppLifecycleState.resumed;
   String? _lastProfileDeviceKey;
   Timer? _sensorAutoRefreshTicker;
 
   List<_HomeTab> get _enabledTabs {
+    if (_isSimpleMode) {
+      return const [_HomeTab.messages, _HomeTab.map];
+    }
     return [
       _HomeTab.messages,
       if (_isContactsEnabled) _HomeTab.contacts,
@@ -101,6 +99,7 @@ class _HomeScreenState extends State<HomeScreen>
     _isMapEnabled = _appProvider.isMapEnabled;
     _isContactsEnabled = _appProvider.isContactsEnabled;
     _isSensorsEnabled = _appProvider.isSensorsEnabled;
+    _isSimpleMode = _appProvider.isSimpleMode;
     _appProvider.addListener(_handleAppProviderChanged);
 
     // Initialize synchronously so first build always has a valid controller.
@@ -137,6 +136,7 @@ class _HomeScreenState extends State<HomeScreen>
       mapEnabled: _appProvider.isMapEnabled,
       contactsEnabled: _appProvider.isContactsEnabled,
       sensorsEnabled: _appProvider.isSensorsEnabled,
+      simpleMode: _appProvider.isSimpleMode,
     );
   }
 
@@ -161,10 +161,12 @@ class _HomeScreenState extends State<HomeScreen>
     required bool mapEnabled,
     required bool contactsEnabled,
     required bool sensorsEnabled,
+    required bool simpleMode,
   }) {
     if (_isMapEnabled == mapEnabled &&
         _isContactsEnabled == contactsEnabled &&
-        _isSensorsEnabled == sensorsEnabled) {
+        _isSensorsEnabled == sensorsEnabled &&
+        _isSimpleMode == simpleMode) {
       return;
     }
 
@@ -182,6 +184,7 @@ class _HomeScreenState extends State<HomeScreen>
     _isMapEnabled = mapEnabled;
     _isContactsEnabled = contactsEnabled;
     _isSensorsEnabled = sensorsEnabled;
+    _isSimpleMode = simpleMode;
     if (!_isMapEnabled) {
       _isMapFullscreen = false;
     }
@@ -355,113 +358,6 @@ class _HomeScreenState extends State<HomeScreen>
             );
           }
         },
-      ),
-    );
-  }
-
-  Future<void> _triggerAdvertFeedback() async {
-    final platform = Theme.of(context).platform;
-
-    try {
-      if (platform == TargetPlatform.iOS) {
-        await HapticFeedback.lightImpact();
-        await Future.delayed(const Duration(milliseconds: 50));
-        await HapticFeedback.lightImpact();
-      } else {
-        if (await Vibration.hasVibrator()) {
-          await Vibration.vibrate(duration: 50);
-        } else {
-          await HapticFeedback.mediumImpact();
-        }
-      }
-    } catch (e) {
-      debugPrint('Haptic feedback error: $e');
-      await HapticFeedback.vibrate();
-    }
-  }
-
-  Future<_AdvertMode?> _showAdvertModeSheet(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final theme = Theme.of(context);
-
-    return showModalBottomSheet<_AdvertMode>(
-      context: context,
-      showDragHandle: true,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Advert mode',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Choose how far this announcement should travel.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 16),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
-                ),
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    Icons.hub_rounded,
-                    color: theme.colorScheme.onPrimaryContainer,
-                  ),
-                ),
-                title: Text(l10n.flood),
-                subtitle: Text(l10n.relayThroughRepeatersAcrossTheMesh),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                onTap: () => Navigator.of(context).pop(_AdvertMode.flood),
-              ),
-              const SizedBox(height: 8),
-              ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 4,
-                  vertical: 4,
-                ),
-                leading: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.secondaryContainer,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(
-                    Icons.near_me_rounded,
-                    color: theme.colorScheme.onSecondaryContainer,
-                  ),
-                ),
-                title: Text(l10n.direct),
-                subtitle: Text(l10n.nearbyOnlyWithoutRepeaterFlooding),
-                trailing: const Icon(Icons.chevron_right_rounded),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                onTap: () => Navigator.of(context).pop(_AdvertMode.direct),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
@@ -679,108 +575,6 @@ class _HomeScreenState extends State<HomeScreen>
     );
   }
 
-  Future<void> _advertiseDevice(
-    BuildContext context, {
-    bool floodMode = true,
-  }) async {
-    final connectionProvider = context.read<ConnectionProvider>();
-
-    if (!connectionProvider.deviceInfo.isConnected) {
-      if (context.mounted) {
-        ToastLogger.error(
-          context,
-          AppLocalizations.of(context)!.deviceNotConnected,
-        );
-      }
-      return;
-    }
-
-    try {
-      // Check if location services are enabled
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        if (context.mounted) {
-          ToastLogger.error(
-            context,
-            AppLocalizations.of(context)!.locationServicesDisabled,
-          );
-        }
-        return;
-      }
-
-      // Check location permissions
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.denied) {
-          if (context.mounted) {
-            ToastLogger.error(
-              context,
-              AppLocalizations.of(context)!.locationPermissionDenied,
-            );
-          }
-          return;
-        }
-      }
-
-      if (permission == LocationPermission.deniedForever) {
-        if (context.mounted) {
-          ToastLogger.error(
-            context,
-            AppLocalizations.of(context)!.locationPermissionPermanentlyDenied,
-          );
-        }
-        return;
-      }
-
-      // Get current GPS position
-      Position? position;
-      try {
-        position = await Geolocator.getCurrentPosition(
-          locationSettings: const LocationSettings(
-            accuracy: LocationAccuracy.best,
-            distanceFilter: 0,
-          ),
-        ).timeout(const Duration(seconds: 5));
-      } catch (e) {
-        debugPrint('❌ Failed to get GPS position: $e');
-        if (context.mounted) {
-          ToastLogger.error(
-            context,
-            AppLocalizations.of(context)!.failedToGetGpsLocation,
-          );
-        }
-        return;
-      }
-
-      // Update lat/lon on device
-      await connectionProvider.setAdvertLatLon(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
-
-      // Small delay to ensure the lat/lon is set
-      await Future.delayed(const Duration(milliseconds: 100));
-
-      await connectionProvider.sendSelfAdvert(floodMode: floodMode);
-
-      if (context.mounted) {
-        ToastLogger.success(
-          context,
-          floodMode ? 'Flood advert sent' : 'Direct advert sent',
-        );
-      }
-    } catch (e) {
-      debugPrint('❌ Failed to advertise device: $e');
-      if (context.mounted) {
-        ToastLogger.error(
-          context,
-          AppLocalizations.of(context)!.failedToAdvertise(e.toString()),
-        );
-      }
-    }
-  }
-
   Future<void> _showConnectionDialog(BuildContext context) async {
     await showConnectionDialogFlow(
       context,
@@ -837,102 +631,105 @@ class _HomeScreenState extends State<HomeScreen>
                   icon: const Icon(Icons.more_vert),
                   itemBuilder: (context) {
                     final items = <PopupMenuEntry<void>>[];
-                    final profilesEnabled = context
-                        .read<ProfileManager>()
-                        .profilesEnabled;
+                    final profilesEnabled =
+                        !_isSimpleMode &&
+                        context.read<ProfileManager>().profilesEnabled;
 
-                    items.add(
-                      PopupMenuItem(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.radar_outlined),
-                            const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)!.liveTraffic),
-                          ],
-                        ),
-                        onTap: () {
-                          final navigator = Navigator.of(context);
-                          final provider = context.read<ConnectionProvider>();
-                          Future.delayed(Duration.zero, () {
-                            if (!mounted) return;
-                            navigator.push(
-                              MaterialPageRoute(
-                                builder: (_) => LiveTrafficScreen.fromProvider(
-                                  provider,
-                                  openPacketLogs: () {
-                                    navigator.push(
-                                      MaterialPageRoute(
-                                        builder: (_) => PacketLogScreen(
-                                          bleService: provider.bleService,
-                                        ),
+                    if (!_isSimpleMode) {
+                      items.add(
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.radar_outlined),
+                              const SizedBox(width: 8),
+                              Text(AppLocalizations.of(context)!.liveTraffic),
+                            ],
+                          ),
+                          onTap: () {
+                            final navigator = Navigator.of(context);
+                            final provider = context.read<ConnectionProvider>();
+                            Future.delayed(Duration.zero, () {
+                              if (!mounted) return;
+                              navigator.push(
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      LiveTrafficScreen.fromProvider(
+                                        provider,
+                                        openPacketLogs: () {
+                                          navigator.push(
+                                            MaterialPageRoute(
+                                              builder: (_) => PacketLogScreen(
+                                                bleService: provider.bleService,
+                                              ),
+                                            ),
+                                          );
+                                        },
                                       ),
-                                    );
-                                  },
                                 ),
-                              ),
-                            );
-                          });
-                        },
-                      ),
-                    );
-
-                    items.add(
-                      PopupMenuItem(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.router_outlined),
-                            const SizedBox(width: 8),
-                            Text(AppLocalizations.of(context)!.repeatersMap),
-                          ],
+                              );
+                            });
+                          },
                         ),
-                        onTap: () {
-                          final navigator = Navigator.of(context);
-                          Future.delayed(Duration.zero, () {
-                            if (!mounted) return;
-                            navigator.push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const RepeatersMapScreen(),
-                                fullscreenDialog: true,
-                              ),
-                            );
-                          });
-                        },
-                      ),
-                    );
+                      );
 
-                    items.add(
-                      PopupMenuItem(
-                        child: Row(
-                          children: [
-                            const Icon(Icons.person_search),
-                            const SizedBox(width: 8),
-                            Consumer<ContactsProvider>(
-                              builder: (context, contactsProvider, child) {
-                                final pendingCount =
-                                    contactsProvider.pendingAdverts.length;
-                                return Text(
-                                  pendingCount > 0
-                                      ? 'Discovery ($pendingCount)'
-                                      : 'Discovery',
-                                );
-                              },
-                            ),
-                          ],
+                      items.add(
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.router_outlined),
+                              const SizedBox(width: 8),
+                              Text(AppLocalizations.of(context)!.repeatersMap),
+                            ],
+                          ),
+                          onTap: () {
+                            final navigator = Navigator.of(context);
+                            Future.delayed(Duration.zero, () {
+                              if (!mounted) return;
+                              navigator.push(
+                                MaterialPageRoute(
+                                  builder: (context) =>
+                                      const RepeatersMapScreen(),
+                                  fullscreenDialog: true,
+                                ),
+                              );
+                            });
+                          },
                         ),
-                        onTap: () {
-                          final navigator = Navigator.of(context);
-                          Future.delayed(Duration.zero, () {
-                            if (!mounted) return;
-                            navigator.push(
-                              MaterialPageRoute(
-                                builder: (context) => const DiscoveryScreen(),
+                      );
+
+                      items.add(
+                        PopupMenuItem(
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_search),
+                              const SizedBox(width: 8),
+                              Consumer<ContactsProvider>(
+                                builder: (context, contactsProvider, child) {
+                                  final pendingCount =
+                                      contactsProvider.pendingAdverts.length;
+                                  return Text(
+                                    pendingCount > 0
+                                        ? 'Discovery ($pendingCount)'
+                                        : 'Discovery',
+                                  );
+                                },
                               ),
-                            );
-                          });
-                        },
-                      ),
-                    );
+                            ],
+                          ),
+                          onTap: () {
+                            final navigator = Navigator.of(context);
+                            Future.delayed(Duration.zero, () {
+                              if (!mounted) return;
+                              navigator.push(
+                                MaterialPageRoute(
+                                  builder: (context) => const DiscoveryScreen(),
+                                ),
+                              );
+                            });
+                          },
+                        ),
+                      );
+                    }
 
                     items.add(
                       PopupMenuItem(
@@ -1066,7 +863,7 @@ class _HomeScreenState extends State<HomeScreen>
                               Icons.message,
                               unreadCount,
                             ),
-                            text: 'Chat',
+                            text: AppLocalizations.of(context)!.chat,
                           );
                         case _HomeTab.contacts:
                           return Tab(
@@ -1082,9 +879,9 @@ class _HomeScreenState extends State<HomeScreen>
                             text: AppLocalizations.of(context)!.map,
                           );
                         case _HomeTab.sensors:
-                          return const Tab(
-                            icon: Icon(Icons.sensors),
-                            text: 'Sensors',
+                          return Tab(
+                            icon: const Icon(Icons.sensors),
+                            text: AppLocalizations.of(context)!.sensors,
                           );
                       }
                     }).toList(),
@@ -1122,8 +919,8 @@ class _HomeScreenState extends State<HomeScreen>
                     ),
                     Text(
                       provider.isReconnecting
-                          ? 'Restoring previous link'
-                          : 'No device connected',
+                          ? AppLocalizations.of(context)!.restoringPreviousLink
+                          : AppLocalizations.of(context)!.noDeviceConnected,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
@@ -1305,50 +1102,6 @@ class _HomeScreenState extends State<HomeScreen>
                             foregroundColor: subtitleColor,
                             minimumSize: Size.square(isTight ? 38 : 40),
                             padding: EdgeInsets.zero,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        GestureDetector(
-                          onTap: () async {
-                            await _triggerAdvertFeedback();
-                            if (!mounted || !context.mounted) return;
-                            await _advertiseDevice(context);
-                          },
-                          onLongPress: () async {
-                            await _triggerAdvertFeedback();
-                            if (!mounted || !context.mounted) return;
-
-                            final mode = await _showAdvertModeSheet(context);
-                            if (!mounted || !context.mounted || mode == null) {
-                              return;
-                            }
-
-                            await _advertiseDevice(
-                              context,
-                              floodMode: mode == _AdvertMode.flood,
-                            );
-                          },
-                          child: Container(
-                            width: isTight ? 38 : 40,
-                            height: isTight ? 38 : 40,
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  theme.colorScheme.primary,
-                                  theme.colorScheme.primary.withValues(
-                                    alpha: 0.78,
-                                  ),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Icon(
-                              Icons.campaign_rounded,
-                              color: Colors.white,
-                              size: isTight ? 18 : 20,
-                            ),
                           ),
                         ),
                       ],

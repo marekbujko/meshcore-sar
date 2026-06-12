@@ -2811,7 +2811,7 @@ class AppLocalizationsEl extends AppLocalizations {
   String get older => 'Παλαιότερο';
 
   @override
-  String get oneByteMode0 => '1 byte (mode 0)';
+  String get oneByteMode0 => '1 byte (λειτουργία 0)';
 
   @override
   String get oneHour => '1 ώρα';
@@ -2924,6 +2924,20 @@ class AppLocalizationsEl extends AppLocalizations {
   String get sizeCompressionAndPreview => 'Μέγεθος, συμπίεση και προεπισκόπηση';
 
   @override
+  String get simpleMode => 'Απλή λειτουργία';
+
+  @override
+  String get simpleModeDescription =>
+      'Μόνο συνομιλία και χάρτης με αγαπημένες επαφές';
+
+  @override
+  String get simpleModeRequiresLockedDestination =>
+      'Ενεργοποιήστε πρώτα το «Κλείδωμα προορισμού» με ένα κανάλι για να χρησιμοποιήσετε την Απλή λειτουργία';
+
+  @override
+  String get noFavouriteContacts => 'Καμία αγαπημένη επαφή';
+
+  @override
   String get skip => 'Παράλειψη';
 
   @override
@@ -2966,14 +2980,14 @@ class AppLocalizationsEl extends AppLocalizations {
   String get thirtySeconds => '30 δευτερόλεπτα';
 
   @override
-  String get threeBytesMode2 => '3 bytes (mode 2)';
+  String get threeBytesMode2 => '3 bytes (λειτουργία 2)';
 
   @override
   String get trafficStatsMessageHistoryAndDeveloperTools =>
       'Στατιστικά κίνησης, ιστορικό μηνυμάτων και εργαλεία προγραμματιστή';
 
   @override
-  String get twoBytesMode1 => '2 bytes (mode 1)';
+  String get twoBytesMode1 => '2 bytes (λειτουργία 1)';
 
   @override
   String get twoMinutes => '2 λεπτά';
@@ -3035,4 +3049,412 @@ class AppLocalizationsEl extends AppLocalizations {
 
   @override
   String get regionScopeCleared => 'Εύρος περιοχής εκκαθαρίστηκε';
+
+  @override
+  String get selectDestinationFirst => 'Επιλέξτε πρώτα κανάλι, επαφή ή δωμάτιο';
+
+  @override
+  String get recipientNoLongerAvailable =>
+      'Ο παραλήπτης δεν είναι πλέον διαθέσιμος';
+
+  @override
+  String failedToSendMessage(String error) {
+    return 'Αποτυχία αποστολής: $error';
+  }
+
+  @override
+  String get tictactoeDirectOnly =>
+      'Η τρίλιζα λειτουργεί μόνο σε άμεσα μηνύματα. Επιλέξτε πρώτα μια επαφή.';
+
+  @override
+  String get deviceKeyUnavailable =>
+      'Το κλειδί της συσκευής δεν είναι διαθέσιμο';
+
+  @override
+  String get imageCompressionFailed => 'Αποτυχία συμπίεσης εικόνας';
+
+  @override
+  String get imageFragmentationFailed => 'Αποτυχία κατακερματισμού εικόνας';
+
+  @override
+  String get failedToAnnounceImage => 'Αποτυχία ανακοίνωσης εικόνας';
+
+  @override
+  String get noRecipientSelected => 'Δεν επιλέχθηκε παραλήπτης';
+
+  @override
+  String get imageSendFailed => 'Αποτυχία αποστολής εικόνας';
+
+  @override
+  String get microphonePermissionRequiredForVoice =>
+      'Απαιτείται άδεια μικροφώνου για φωνητικά μηνύματα';
+
+  @override
+  String get recordingDiscarded => 'Η ηχογράφηση απορρίφθηκε';
+
+  @override
+  String publicChannelMediaWarning(String mediaType) {
+    return 'Πρόκειται να στείλετε $mediaType στο δημόσιο κανάλι. Δεν συνιστάται, καθώς μπορεί να το λάβουν όλοι στο δίκτυο mesh. Επιλέξτε ιδιωτικό ή επισημασμένο κανάλι, εκτός αν αυτό θέλετε.';
+  }
+
+  @override
+  String get selectPrivateChannelToShareLocation =>
+      'Επιλέξτε ιδιωτικό κανάλι για να μοιραστείτε την τοποθεσία σας.';
+
+  @override
+  String get stopSharingMyLocation => 'Διακοπή κοινοποίησης της τοποθεσίας μου';
+
+  @override
+  String get shareMyLocation => 'Κοινοποίηση της τοποθεσίας μου';
+
+  @override
+  String get stopRecording => 'Διακοπή ηχογράφησης';
+
+  @override
+  String get recordVoice => 'Ηχογράφηση φωνητικού μηνύματος';
+
+  @override
+  String get moreActions => 'Περισσότερες ενέργειες';
+
+  @override
+  String get noMessagesInFilter => 'Δεν υπάρχουν μηνύματα σε αυτό το φίλτρο';
+
+  @override
+  String get noMatchesInFilter => 'Δεν υπάρχουν αποτελέσματα σε αυτό το φίλτρο';
+
+  @override
+  String syncFailed(String error) {
+    return 'Αποτυχία συγχρονισμού: $error';
+  }
+
+  @override
+  String get invalidLink => 'Μη έγκυρος σύνδεσμος';
+
+  @override
+  String get cannotOpenLink => 'Δεν είναι δυνατό το άνοιγμα του συνδέσμου';
+
+  @override
+  String get failedToOpenLink => 'Αποτυχία ανοίγματος του συνδέσμου';
+
+  @override
+  String get failedToResendMessage => 'Αποτυχία επαναποστολής του μηνύματος';
+
+  @override
+  String retryFailed(String error) {
+    return 'Η επανάληψη απέτυχε: $error';
+  }
+
+  @override
+  String get deleteDrawingAndMessage => 'Διαγραφή σχεδίου και μηνύματος';
+
+  @override
+  String get lastEchoRelay => 'Τελευταία ηχώ: αναμεταδότης';
+
+  @override
+  String get lastEchoPath => 'Τελευταία ηχώ: διαδρομή';
+
+  @override
+  String get lastEchoBytesReport => 'Τελευταία ηχώ: αναφορά byte';
+
+  @override
+  String get noGpsCoordinatesAvailable =>
+      'Δεν υπάρχουν διαθέσιμες συντεταγμένες GPS';
+
+  @override
+  String get notASarMarker => 'Δεν είναι δείκτης SAR';
+
+  @override
+  String failedToSaveTemplate(String error) {
+    return 'Αποτυχία αποθήκευσης προτύπου: $error';
+  }
+
+  @override
+  String get drawingNotFound => 'Το σχέδιο δεν βρέθηκε';
+
+  @override
+  String get unknownDrawingType => 'Άγνωστος τύπος σχεδίου';
+
+  @override
+  String get customMapMarker => 'Προσαρμοσμένος δείκτης χάρτη';
+
+  @override
+  String customMapPointLabel(String point) {
+    return 'Σημείο: $point';
+  }
+
+  @override
+  String mapIdLabel(String id) {
+    return 'ID χάρτη: $id';
+  }
+
+  @override
+  String get cannotFetchVoice => 'Δεν είναι δυνατή η λήψη της φωνής';
+
+  @override
+  String get senderContactUnknown =>
+      'Η επαφή του αποστολέα είναι άγνωστη. Συγχρονίστε πρώτα τις επαφές.';
+
+  @override
+  String get senderRouteUnknown =>
+      'Η διαδρομή του αποστολέα είναι άγνωστη. Συγχρονίστε πρώτα επαφές/διαδρομή.';
+
+  @override
+  String messageTooFar(String hops, String maxHops) {
+    return 'Το μήνυμα είναι πολύ μακριά ($hops αναπηδήσεις, μέγ. $maxHops).';
+  }
+
+  @override
+  String get senderRouteNoPathResponse =>
+      'Η διαδρομή του αποστολέα δεν απάντησε στον έλεγχο διαδρομής. Συγχρονίστε επαφές/διαδρομή και δοκιμάστε ξανά.';
+
+  @override
+  String get senderRouteNoRawResponse =>
+      'Η διαδρομή του αποστολέα δεν απάντησε στη raw διαδρομή μεταφοράς.';
+
+  @override
+  String voiceFetchOverHops(String hops) {
+    return 'Η λήψη φωνής μέσω $hops αναπηδήσεων μπορεί να διαρκέσει.';
+  }
+
+  @override
+  String get voiceReceiveCanceled => 'Η λήψη φωνής ακυρώθηκε';
+
+  @override
+  String get fetchingMissingVoiceFragments =>
+      'Λήψη φωνητικών τμημάτων που λείπουν';
+
+  @override
+  String get receivingVoice => 'Λήψη φωνής';
+
+  @override
+  String get cannotFetchImage => 'Δεν είναι δυνατή η λήψη της εικόνας';
+
+  @override
+  String imageFetchOverHops(String hops) {
+    return 'Η λήψη εικόνας μέσω $hops αναπηδήσεων μπορεί να διαρκέσει.';
+  }
+
+  @override
+  String get imageAlreadyBeingReceived => 'Η εικόνα λαμβάνεται ήδη';
+
+  @override
+  String get loadImage => 'Φόρτωση εικόνας';
+
+  @override
+  String get imageFetchFailedToSendRequest =>
+      'Αποτυχία αποστολής αιτήματος εικόνας';
+
+  @override
+  String get imageUnavailable => 'Η εικόνα δεν είναι διαθέσιμη αυτήν τη στιγμή';
+
+  @override
+  String get imageFetchTimedOut => 'Η λήψη της εικόνας έληξε';
+
+  @override
+  String get imageReceiveCanceled => 'Η λήψη της εικόνας ακυρώθηκε';
+
+  @override
+  String get closeImagePreview => 'Κλείσιμο προεπισκόπησης εικόνας';
+
+  @override
+  String get recordingReleaseToSend => 'Ηχογράφηση... αφήστε για αποστολή';
+
+  @override
+  String get sendingVoice => 'Αποστολή φωνής...';
+
+  @override
+  String get sendLongPressToRecordVoice =>
+      'Αποστολή (παρατεταμένο πάτημα για ηχογράφηση)';
+
+  @override
+  String get discardRecording => 'Απόρριψη ηχογράφησης';
+
+  @override
+  String hopCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count αναπηδήσεις',
+      one: '$count αναπήδηση',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelsSectionDescription =>
+      'Κανάλια εκπομπής για κοντινή κίνηση mesh';
+
+  @override
+  String get roomsSectionDescription =>
+      'Κοινόχρηστοι χώροι για συνεχή συντονισμό ομάδας';
+
+  @override
+  String get contactsSectionDescription =>
+      'Άτομα και συσκευές που μπορείτε να προσεγγίσετε άμεσα';
+
+  @override
+  String get noRecentChatters => 'Κανένας πρόσφατος συνομιλητής';
+
+  @override
+  String get public => 'Δημόσιο';
+
+  @override
+  String get failedToSendTicTacToeMove => 'Αποτυχία αποστολής κίνησης τρίλιζας';
+
+  @override
+  String get youWon => 'Κερδίσατε';
+
+  @override
+  String get opponentWon => 'Κέρδισε ο αντίπαλος';
+
+  @override
+  String get gameDraw => 'Ισοπαλία';
+
+  @override
+  String get yourTurn => 'Η σειρά σας';
+
+  @override
+  String get opponentTurn => 'Σειρά του αντιπάλου';
+
+  @override
+  String get pleaseEnterValidCoordinates => 'Εισαγάγετε έγκυρες συντεταγμένες';
+
+  @override
+  String get locationNotAvailable => 'Η τοποθεσία δεν είναι διαθέσιμη';
+
+  @override
+  String get customCaveMapPoint => 'Προσαρμοσμένο σημείο χάρτη σπηλαίου';
+
+  @override
+  String get mapPoint => 'Σημείο χάρτη';
+
+  @override
+  String get fetchingMissingImageFragments => 'Λήψη τμημάτων που λείπουν…';
+
+  @override
+  String get loadingImage => 'Φόρτωση…';
+
+  @override
+  String get receivingImage => 'Λήψη…';
+
+  @override
+  String get tapToLoad => 'Πατήστε για φόρτωση';
+
+  @override
+  String get connectDevice => 'Σύνδεση συσκευής';
+
+  @override
+  String get chooseTransportSubtitle =>
+      'Επιλέξτε μεταφορά Bluetooth, WiFi ή σειριακή';
+
+  @override
+  String get ble => 'BLE';
+
+  @override
+  String get network => 'Δίκτυο';
+
+  @override
+  String get serial => 'Σειριακή θύρα';
+
+  @override
+  String get scan => 'Σάρωση';
+
+  @override
+  String get pressScanToSearchForDevices =>
+      'Πατήστε «Σάρωση» για αναζήτηση κοντινών συσκευών';
+
+  @override
+  String failedToConnectToDevice(String name) {
+    return 'Αποτυχία σύνδεσης με $name';
+  }
+
+  @override
+  String get unknownDevice => 'Άγνωστη συσκευή';
+
+  @override
+  String get showingCachedResultsTapRefresh =>
+      'Εμφανίζονται αποτελέσματα από την προσωρινή μνήμη. Πατήστε ανανέωση για νέα σάρωση.';
+
+  @override
+  String scanningLocalNetworkOnPort(int port) {
+    return 'Σάρωση τοπικού δικτύου για συσκευές MeshCore WiFi στη θύρα $port';
+  }
+
+  @override
+  String get cancelScanAndAddServer =>
+      'Ακύρωση σάρωσης και προσθήκη διακομιστή';
+
+  @override
+  String get addServer => 'Προσθήκη διακομιστή';
+
+  @override
+  String scanningProgressIps(int scanned, String total) {
+    return 'Σάρωση... $scanned/$total διευθύνσεις IP';
+  }
+
+  @override
+  String get cancelAndEnterManually => 'Ακύρωση και χειροκίνητη εισαγωγή';
+
+  @override
+  String get noRecentOrDiscoveredServers =>
+      'Δεν υπάρχουν ακόμη πρόσφατοι ή εντοπισμένοι διακομιστές';
+
+  @override
+  String get recentlyUsed => 'Πρόσφατα χρησιμοποιημένοι';
+
+  @override
+  String get connecting => 'Γίνεται σύνδεση...';
+
+  @override
+  String get discoveredOnThisNetwork => 'Εντοπίστηκαν σε αυτό το δίκτυο';
+
+  @override
+  String serverNoLongerAvailable(String host, int port) {
+    return 'Ο διακομιστής στο $host:$port δεν είναι πλέον διαθέσιμος. Σαρώστε ξανά για να βρείτε ενεργούς διακομιστές.';
+  }
+
+  @override
+  String failedToConnectToHost(String host, int port) {
+    return 'Αποτυχία σύνδεσης με $host:$port';
+  }
+
+  @override
+  String get enterValidIpAddress => 'Εισαγάγετε έγκυρη διεύθυνση IP';
+
+  @override
+  String get enterValidTcpPort => 'Εισαγάγετε έγκυρη θύρα TCP';
+
+  @override
+  String get ipAddress => 'Διεύθυνση IP';
+
+  @override
+  String get tcpPort => 'Θύρα TCP';
+
+  @override
+  String get customServerPort => 'Προσαρμοσμένη θύρα διακομιστή';
+
+  @override
+  String get chat => 'Συνομιλία';
+
+  @override
+  String get restoringPreviousLink => 'Επαναφορά προηγούμενης σύνδεσης';
+
+  @override
+  String get noDeviceConnected => 'Δεν υπάρχει συνδεδεμένη συσκευή';
+
+  @override
+  String get sendAdvert => 'Αποστολή της επαφής μου';
+
+  @override
+  String get advertMode => 'Αποστολή της επαφής μου';
+
+  @override
+  String get advertModeSubtitle =>
+      'Επιλέξτε πόσο μακριά θα φτάσουν τα στοιχεία επαφής σας.';
+
+  @override
+  String get floodAdvertSent => 'Η επαφή στάλθηκε σε όλο το δίκτυο mesh';
+
+  @override
+  String get directAdvertSent => 'Η επαφή στάλθηκε σε κοντινές συσκευές';
 }

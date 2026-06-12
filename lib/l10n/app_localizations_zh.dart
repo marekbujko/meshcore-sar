@@ -2797,6 +2797,19 @@ class AppLocalizationsZh extends AppLocalizations {
   String get sizeCompressionAndPreview => '大小、压缩和预览';
 
   @override
+  String get simpleMode => '简单模式';
+
+  @override
+  String get simpleModeDescription => '仅与收藏联系人聊天和查看地图';
+
+  @override
+  String get simpleModeRequiresLockedDestination =>
+      '请先启用“锁定目的地”并选择一个频道，再使用简单模式';
+
+  @override
+  String get noFavouriteContacts => '暂无收藏联系人';
+
+  @override
   String get skip => '跳过';
 
   @override
@@ -2902,4 +2915,389 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get regionScopeCleared => '区域范围已清除';
+
+  @override
+  String get selectDestinationFirst => '请先选择频道、联系人或房间';
+
+  @override
+  String get recipientNoLongerAvailable => '收件人已不可用';
+
+  @override
+  String failedToSendMessage(String error) {
+    return '发送失败：$error';
+  }
+
+  @override
+  String get tictactoeDirectOnly => '井字棋仅适用于私聊消息。请先选择联系人。';
+
+  @override
+  String get deviceKeyUnavailable => '设备密钥不可用';
+
+  @override
+  String get imageCompressionFailed => '图片压缩失败';
+
+  @override
+  String get imageFragmentationFailed => '图片分片失败';
+
+  @override
+  String get failedToAnnounceImage => '图片通告失败';
+
+  @override
+  String get noRecipientSelected => '未选择收件人';
+
+  @override
+  String get imageSendFailed => '图片发送失败';
+
+  @override
+  String get microphonePermissionRequiredForVoice => '语音消息需要麦克风权限';
+
+  @override
+  String get recordingDiscarded => '已丢弃录音';
+
+  @override
+  String publicChannelMediaWarning(String mediaType) {
+    return '您即将向公共频道发送$mediaType。不建议这样做，因为 mesh 网络中的所有人都可能收到。除非确有需要，请选择私有或带标签的频道。';
+  }
+
+  @override
+  String get selectPrivateChannelToShareLocation => '请选择私有频道来分享您的位置。';
+
+  @override
+  String get stopSharingMyLocation => '停止分享我的位置';
+
+  @override
+  String get shareMyLocation => '分享我的位置';
+
+  @override
+  String get stopRecording => '停止录音';
+
+  @override
+  String get recordVoice => '录制语音';
+
+  @override
+  String get moreActions => '更多操作';
+
+  @override
+  String get noMessagesInFilter => '此筛选条件下没有消息';
+
+  @override
+  String get noMatchesInFilter => '此筛选条件下没有匹配项';
+
+  @override
+  String syncFailed(String error) {
+    return '同步失败：$error';
+  }
+
+  @override
+  String get invalidLink => '无效链接';
+
+  @override
+  String get cannotOpenLink => '无法打开链接';
+
+  @override
+  String get failedToOpenLink => '打开链接失败';
+
+  @override
+  String get failedToResendMessage => '重新发送消息失败';
+
+  @override
+  String retryFailed(String error) {
+    return '重试失败：$error';
+  }
+
+  @override
+  String get deleteDrawingAndMessage => '删除绘图和消息';
+
+  @override
+  String get lastEchoRelay => '最后回声：中继';
+
+  @override
+  String get lastEchoPath => '最后回声：路径';
+
+  @override
+  String get lastEchoBytesReport => '最后回声：字节报告';
+
+  @override
+  String get noGpsCoordinatesAvailable => '没有可用的 GPS 坐标';
+
+  @override
+  String get notASarMarker => '不是搜救标记';
+
+  @override
+  String failedToSaveTemplate(String error) {
+    return '保存模板失败：$error';
+  }
+
+  @override
+  String get drawingNotFound => '未找到绘图';
+
+  @override
+  String get unknownDrawingType => '未知绘图类型';
+
+  @override
+  String get customMapMarker => '自定义地图标记';
+
+  @override
+  String customMapPointLabel(String point) {
+    return '坐标点：$point';
+  }
+
+  @override
+  String mapIdLabel(String id) {
+    return '地图 ID：$id';
+  }
+
+  @override
+  String get cannotFetchVoice => '无法获取语音';
+
+  @override
+  String get senderContactUnknown => '发送者联系人未知。请先同步联系人。';
+
+  @override
+  String get senderRouteUnknown => '发送者路由未知。请先同步联系人/路径。';
+
+  @override
+  String messageTooFar(String hops, String maxHops) {
+    return '消息距离过远（$hops 跳，最多 $maxHops 跳）。';
+  }
+
+  @override
+  String get senderRouteNoPathResponse => '发送者路由未响应路径检测。请同步联系人/路径后重试。';
+
+  @override
+  String get senderRouteNoRawResponse => '发送者路由在原始传输路径上未响应。';
+
+  @override
+  String voiceFetchOverHops(String hops) {
+    return '通过 $hops 跳获取语音可能需要一些时间。';
+  }
+
+  @override
+  String get voiceReceiveCanceled => '已取消接收语音';
+
+  @override
+  String get fetchingMissingVoiceFragments => '正在获取缺失的语音分片';
+
+  @override
+  String get receivingVoice => '正在接收语音';
+
+  @override
+  String get cannotFetchImage => '无法获取图片';
+
+  @override
+  String imageFetchOverHops(String hops) {
+    return '通过 $hops 跳获取图片可能需要一些时间。';
+  }
+
+  @override
+  String get imageAlreadyBeingReceived => '图片正在接收中';
+
+  @override
+  String get loadImage => '加载图片';
+
+  @override
+  String get imageFetchFailedToSendRequest => '图片获取请求发送失败';
+
+  @override
+  String get imageUnavailable => '图片暂时不可用';
+
+  @override
+  String get imageFetchTimedOut => '图片获取超时';
+
+  @override
+  String get imageReceiveCanceled => '已取消接收图片';
+
+  @override
+  String get closeImagePreview => '关闭图片预览';
+
+  @override
+  String get recordingReleaseToSend => '正在录音……松开发送';
+
+  @override
+  String get sendingVoice => '正在发送语音……';
+
+  @override
+  String get sendLongPressToRecordVoice => '发送（长按录制语音）';
+
+  @override
+  String get discardRecording => '丢弃录音';
+
+  @override
+  String hopCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count 跳',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelsSectionDescription => '用于附近 mesh 通信的广播频道';
+
+  @override
+  String get roomsSectionDescription => '用于团队持续协调的共享空间';
+
+  @override
+  String get contactsSectionDescription => '可直接联系的人员和设备';
+
+  @override
+  String get noRecentChatters => '最近没有人发言';
+
+  @override
+  String get public => '公共';
+
+  @override
+  String get failedToSendTicTacToeMove => '井字棋走子发送失败';
+
+  @override
+  String get youWon => '您赢了';
+
+  @override
+  String get opponentWon => '对手赢了';
+
+  @override
+  String get gameDraw => '平局';
+
+  @override
+  String get yourTurn => '轮到您';
+
+  @override
+  String get opponentTurn => '轮到对手';
+
+  @override
+  String get pleaseEnterValidCoordinates => '请输入有效坐标';
+
+  @override
+  String get locationNotAvailable => '位置不可用';
+
+  @override
+  String get customCaveMapPoint => '自定义洞穴地图点';
+
+  @override
+  String get mapPoint => '地图点';
+
+  @override
+  String get fetchingMissingImageFragments => '正在获取缺失分片……';
+
+  @override
+  String get loadingImage => '加载中……';
+
+  @override
+  String get receivingImage => '接收中……';
+
+  @override
+  String get tapToLoad => '点按加载';
+
+  @override
+  String get connectDevice => '连接设备';
+
+  @override
+  String get chooseTransportSubtitle => '选择 Bluetooth、WiFi 或串口传输';
+
+  @override
+  String get ble => 'BLE';
+
+  @override
+  String get network => '网络';
+
+  @override
+  String get serial => '串口';
+
+  @override
+  String get scan => '扫描';
+
+  @override
+  String get pressScanToSearchForDevices => '点按扫描以搜索附近设备';
+
+  @override
+  String failedToConnectToDevice(String name) {
+    return '连接 $name 失败';
+  }
+
+  @override
+  String get unknownDevice => '未知设备';
+
+  @override
+  String get showingCachedResultsTapRefresh => '正在显示缓存结果。点按刷新以重新扫描。';
+
+  @override
+  String scanningLocalNetworkOnPort(int port) {
+    return '正在扫描本地网络中端口 $port 上的 MeshCore WiFi 设备';
+  }
+
+  @override
+  String get cancelScanAndAddServer => '取消扫描并添加服务器';
+
+  @override
+  String get addServer => '添加服务器';
+
+  @override
+  String scanningProgressIps(int scanned, String total) {
+    return '正在扫描……$scanned/$total 个 IP';
+  }
+
+  @override
+  String get cancelAndEnterManually => '取消并手动输入';
+
+  @override
+  String get noRecentOrDiscoveredServers => '暂无最近使用或发现的服务器';
+
+  @override
+  String get recentlyUsed => '最近使用';
+
+  @override
+  String get connecting => '正在连接……';
+
+  @override
+  String get discoveredOnThisNetwork => '在此网络中发现';
+
+  @override
+  String serverNoLongerAvailable(String host, int port) {
+    return '$host:$port 上的服务器已不可用。请重新扫描以查找活跃的服务器。';
+  }
+
+  @override
+  String failedToConnectToHost(String host, int port) {
+    return '连接 $host:$port 失败';
+  }
+
+  @override
+  String get enterValidIpAddress => '请输入有效的 IP 地址';
+
+  @override
+  String get enterValidTcpPort => '请输入有效的 TCP 端口';
+
+  @override
+  String get ipAddress => 'IP 地址';
+
+  @override
+  String get tcpPort => 'TCP 端口';
+
+  @override
+  String get customServerPort => '自定义服务器端口';
+
+  @override
+  String get chat => '聊天';
+
+  @override
+  String get restoringPreviousLink => '正在恢复先前的连接';
+
+  @override
+  String get noDeviceConnected => '未连接设备';
+
+  @override
+  String get sendAdvert => '发送我的联系人信息';
+
+  @override
+  String get advertMode => '发送我的联系人信息';
+
+  @override
+  String get advertModeSubtitle => '选择您的联系人信息应传播多远。';
+
+  @override
+  String get floodAdvertSent => '联系人信息已发送至整个 mesh 网络';
+
+  @override
+  String get directAdvertSent => '联系人信息已发送至附近设备';
 }

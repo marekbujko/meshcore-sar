@@ -1002,6 +1002,70 @@ void main() {
     );
   });
 
+  group('ContactsProvider device-authoritative sync', () {
+    late ContactsProvider provider;
+    late Contact keptContact;
+    late Contact staleContact;
+
+    setUp(() async {
+      SharedPreferences.setMockInitialValues({});
+      provider = ContactsProvider();
+      keptContact = createContact(
+        key: createPublicKey(10),
+        type: ContactType.chat,
+        name: 'Still On Device',
+      );
+      staleContact = createContact(
+        key: createPublicKey(40),
+        type: ContactType.chat,
+        name: 'Deleted On Device',
+      );
+      provider.addOrUpdateContact(keptContact);
+      provider.addOrUpdateContact(staleContact);
+      await provider.prepareForDeviceContactSync();
+    });
+
+    test('removes contacts the device no longer reports after a full sync', () {
+      // Device only re-sends one of the two contacts during sync.
+      provider.addOrUpdateContact(keptContact);
+
+      provider.finalizeDeviceContactSync(deviceListComplete: true);
+
+      expect(provider.findContactByKey(keptContact.publicKey), isNotNull);
+      expect(provider.findContactByKey(staleContact.publicKey), isNull);
+    });
+
+    test('keeps all contacts when the sync was partial', () {
+      provider.addOrUpdateContact(keptContact);
+
+      provider.finalizeDeviceContactSync(deviceListComplete: false);
+
+      expect(provider.findContactByKey(keptContact.publicKey), isNotNull);
+      expect(provider.findContactByKey(staleContact.publicKey), isNotNull);
+    });
+
+    test('never removes channel pseudo-contacts during contact sync', () {
+      final channelKey = Uint8List(32)
+        ..[0] = 0xFF
+        ..[1] = 3;
+      provider.addOrUpdateContact(
+        createContact(
+          key: channelKey,
+          type: ContactType.channel,
+          name: 'Team Channel',
+        ),
+      );
+      // Re-prepare so the channel pseudo-contact is part of the snapshot.
+      provider.prepareForDeviceContactSync();
+      provider.addOrUpdateContact(keptContact);
+
+      provider.finalizeDeviceContactSync(deviceListComplete: true);
+
+      expect(provider.findContactByKey(channelKey), isNotNull);
+      expect(provider.findContactByKey(staleContact.publicKey), isNull);
+    });
+  });
+
   test('stores raw telemetry hex in metadata for verification', () async {
     SharedPreferences.setMockInitialValues({});
     final provider = ContactsProvider();

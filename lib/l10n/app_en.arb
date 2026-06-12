@@ -2842,6 +2842,10 @@
     }
   },
   "sizeCompressionAndPreview": "Size, compression, and preview",
+  "simpleMode": "Simple mode",
+  "simpleModeDescription": "Only chat and map with favourite contacts",
+  "simpleModeRequiresLockedDestination": "Enable \"Lock destination\" with a channel first to use Simple mode",
+  "noFavouriteContacts": "No favourite contacts",
   "skip": "Skip",
   "smallerFileSize": "Smaller file size",
   "sort": "Sort",
@@ -2883,5 +2887,561 @@
         "type": "String"
       }
     }
+  },
+  "selectDestinationFirst": "Select a channel, contact, or room first",
+  "@selectDestinationFirst": {
+    "description": ""
+  },
+  "recipientNoLongerAvailable": "Recipient is no longer available",
+  "@recipientNoLongerAvailable": {
+    "description": ""
+  },
+  "failedToSendMessage": "Failed to send: {error}",
+  "@failedToSendMessage": {
+    "description": "",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "tictactoeDirectOnly": "Tic-Tac-Toe works only in direct messages. Choose a contact first.",
+  "@tictactoeDirectOnly": {
+    "description": ""
+  },
+  "deviceKeyUnavailable": "Device key is unavailable",
+  "@deviceKeyUnavailable": {
+    "description": ""
+  },
+  "imageCompressionFailed": "Image compression failed",
+  "@imageCompressionFailed": {
+    "description": ""
+  },
+  "imageFragmentationFailed": "Image fragmentation failed",
+  "@imageFragmentationFailed": {
+    "description": ""
+  },
+  "failedToAnnounceImage": "Failed to announce image",
+  "@failedToAnnounceImage": {
+    "description": ""
+  },
+  "noRecipientSelected": "No recipient selected",
+  "@noRecipientSelected": {
+    "description": ""
+  },
+  "imageSendFailed": "Image send failed",
+  "@imageSendFailed": {
+    "description": ""
+  },
+  "microphonePermissionRequiredForVoice": "Microphone permission required for voice",
+  "@microphonePermissionRequiredForVoice": {
+    "description": ""
+  },
+  "recordingDiscarded": "Recording discarded",
+  "@recordingDiscarded": {
+    "description": ""
+  },
+  "publicChannelMediaWarning": "You are about to send {mediaType} to the Public Channel. This is not advised because everyone on the mesh may receive it. Choose a private or tagged channel unless this is what you want.",
+  "@publicChannelMediaWarning": {
+    "description": "",
+    "placeholders": {
+      "mediaType": {
+        "type": "String"
+      }
+    }
+  },
+  "selectPrivateChannelToShareLocation": "Select a private channel to share your location.",
+  "@selectPrivateChannelToShareLocation": {
+    "description": ""
+  },
+  "stopSharingMyLocation": "Stop sharing my location",
+  "@stopSharingMyLocation": {
+    "description": ""
+  },
+  "shareMyLocation": "Share my location",
+  "@shareMyLocation": {
+    "description": ""
+  },
+  "stopRecording": "Stop recording",
+  "@stopRecording": {
+    "description": ""
+  },
+  "recordVoice": "Record voice",
+  "@recordVoice": {
+    "description": ""
+  },
+  "moreActions": "More actions",
+  "@moreActions": {
+    "description": ""
+  },
+  "noMessagesInFilter": "No messages in this filter",
+  "@noMessagesInFilter": {
+    "description": ""
+  },
+  "noMatchesInFilter": "No matches in this filter",
+  "@noMatchesInFilter": {
+    "description": ""
+  },
+  "syncFailed": "Sync failed: {error}",
+  "@syncFailed": {
+    "description": "",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "invalidLink": "Invalid link",
+  "@invalidLink": {
+    "description": ""
+  },
+  "cannotOpenLink": "Cannot open link",
+  "@cannotOpenLink": {
+    "description": ""
+  },
+  "failedToOpenLink": "Failed to open link",
+  "@failedToOpenLink": {
+    "description": ""
+  },
+  "failedToResendMessage": "Failed to resend message",
+  "@failedToResendMessage": {
+    "description": ""
+  },
+  "retryFailed": "Retry failed: {error}",
+  "@retryFailed": {
+    "description": "",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteDrawingAndMessage": "Delete drawing & message",
+  "@deleteDrawingAndMessage": {
+    "description": ""
+  },
+  "lastEchoRelay": "Last echo relay",
+  "@lastEchoRelay": {
+    "description": ""
+  },
+  "lastEchoPath": "Last echo path",
+  "@lastEchoPath": {
+    "description": ""
+  },
+  "lastEchoBytesReport": "Last echo bytes report",
+  "@lastEchoBytesReport": {
+    "description": ""
+  },
+  "noGpsCoordinatesAvailable": "No GPS coordinates available",
+  "@noGpsCoordinatesAvailable": {
+    "description": ""
+  },
+  "notASarMarker": "Not a SAR marker",
+  "@notASarMarker": {
+    "description": ""
+  },
+  "failedToSaveTemplate": "Failed to save template: {error}",
+  "@failedToSaveTemplate": {
+    "description": "",
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "drawingNotFound": "Drawing not found",
+  "@drawingNotFound": {
+    "description": ""
+  },
+  "unknownDrawingType": "Unknown drawing type",
+  "@unknownDrawingType": {
+    "description": ""
+  },
+  "customMapMarker": "Custom map marker",
+  "@customMapMarker": {
+    "description": ""
+  },
+  "customMapPointLabel": "Point: {point}",
+  "@customMapPointLabel": {
+    "description": "",
+    "placeholders": {
+      "point": {
+        "type": "String"
+      }
+    }
+  },
+  "mapIdLabel": "Map ID: {id}",
+  "@mapIdLabel": {
+    "description": "",
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "cannotFetchVoice": "Cannot fetch voice",
+  "@cannotFetchVoice": {
+    "description": ""
+  },
+  "senderContactUnknown": "Sender contact is unknown. Sync contacts first.",
+  "@senderContactUnknown": {
+    "description": ""
+  },
+  "senderRouteUnknown": "Sender route is unknown. Sync contacts/path first.",
+  "@senderRouteUnknown": {
+    "description": ""
+  },
+  "messageTooFar": "Message is too far ({hops} hops, max {maxHops}).",
+  "@messageTooFar": {
+    "description": "",
+    "placeholders": {
+      "hops": {
+        "type": "String"
+      },
+      "maxHops": {
+        "type": "String"
+      }
+    }
+  },
+  "senderRouteNoPathResponse": "Sender route did not respond to a path check. Sync contacts/path and try again.",
+  "@senderRouteNoPathResponse": {
+    "description": ""
+  },
+  "senderRouteNoRawResponse": "Sender route did not respond on the raw transport path.",
+  "@senderRouteNoRawResponse": {
+    "description": ""
+  },
+  "voiceFetchOverHops": "Voice fetch over {hops} hops may take a while.",
+  "@voiceFetchOverHops": {
+    "description": "",
+    "placeholders": {
+      "hops": {
+        "type": "String"
+      }
+    }
+  },
+  "voiceReceiveCanceled": "Voice receive canceled",
+  "@voiceReceiveCanceled": {
+    "description": ""
+  },
+  "fetchingMissingVoiceFragments": "Fetching missing voice fragments",
+  "@fetchingMissingVoiceFragments": {
+    "description": ""
+  },
+  "receivingVoice": "Receiving voice",
+  "@receivingVoice": {
+    "description": ""
+  },
+  "cannotFetchImage": "Cannot fetch image",
+  "@cannotFetchImage": {
+    "description": ""
+  },
+  "imageFetchOverHops": "Image fetch over {hops} hops may take a while.",
+  "@imageFetchOverHops": {
+    "description": "",
+    "placeholders": {
+      "hops": {
+        "type": "String"
+      }
+    }
+  },
+  "imageAlreadyBeingReceived": "Image is already being received",
+  "@imageAlreadyBeingReceived": {
+    "description": ""
+  },
+  "loadImage": "Load image",
+  "@loadImage": {
+    "description": ""
+  },
+  "imageFetchFailedToSendRequest": "Image fetch failed to send request",
+  "@imageFetchFailedToSendRequest": {
+    "description": ""
+  },
+  "imageUnavailable": "Image unavailable right now",
+  "@imageUnavailable": {
+    "description": ""
+  },
+  "imageFetchTimedOut": "Image fetch timed out",
+  "@imageFetchTimedOut": {
+    "description": ""
+  },
+  "imageReceiveCanceled": "Image receive canceled",
+  "@imageReceiveCanceled": {
+    "description": ""
+  },
+  "closeImagePreview": "Close image preview",
+  "@closeImagePreview": {
+    "description": ""
+  },
+  "recordingReleaseToSend": "Recording... release to send voice",
+  "@recordingReleaseToSend": {
+    "description": ""
+  },
+  "sendingVoice": "Sending voice...",
+  "@sendingVoice": {
+    "description": ""
+  },
+  "sendLongPressToRecordVoice": "Send (long press to record voice)",
+  "@sendLongPressToRecordVoice": {
+    "description": ""
+  },
+  "discardRecording": "Discard recording",
+  "@discardRecording": {
+    "description": ""
+  },
+  "hopCount": "{count, plural, =1{1 hop} other{{count} hops}}",
+  "@hopCount": {
+    "description": "",
+    "placeholders": {
+      "count": {
+        "type": "num"
+      }
+    }
+  },
+  "channelsSectionDescription": "Broadcast lanes for nearby mesh traffic",
+  "@channelsSectionDescription": {
+    "description": ""
+  },
+  "roomsSectionDescription": "Shared spaces for ongoing team coordination",
+  "@roomsSectionDescription": {
+    "description": ""
+  },
+  "contactsSectionDescription": "Direct people and devices you can reach",
+  "@contactsSectionDescription": {
+    "description": ""
+  },
+  "noRecentChatters": "No recent chatters",
+  "@noRecentChatters": {
+    "description": ""
+  },
+  "public": "Public",
+  "@public": {
+    "description": ""
+  },
+  "failedToSendTicTacToeMove": "Failed to send Tic-Tac-Toe move",
+  "@failedToSendTicTacToeMove": {
+    "description": ""
+  },
+  "youWon": "You won",
+  "@youWon": {
+    "description": ""
+  },
+  "opponentWon": "Opponent won",
+  "@opponentWon": {
+    "description": ""
+  },
+  "gameDraw": "Draw",
+  "@gameDraw": {
+    "description": ""
+  },
+  "yourTurn": "Your turn",
+  "@yourTurn": {
+    "description": ""
+  },
+  "opponentTurn": "Opponent turn",
+  "@opponentTurn": {
+    "description": ""
+  },
+  "pleaseEnterValidCoordinates": "Please enter valid coordinates",
+  "@pleaseEnterValidCoordinates": {
+    "description": ""
+  },
+  "locationNotAvailable": "Location not available",
+  "@locationNotAvailable": {
+    "description": ""
+  },
+  "customCaveMapPoint": "Custom cave map point",
+  "@customCaveMapPoint": {
+    "description": ""
+  },
+  "mapPoint": "Map point",
+  "@mapPoint": {
+    "description": ""
+  },
+  "fetchingMissingImageFragments": "Fetching missing fragments…",
+  "@fetchingMissingImageFragments": {
+    "description": ""
+  },
+  "loadingImage": "Loading…",
+  "@loadingImage": {
+    "description": ""
+  },
+  "receivingImage": "Receiving…",
+  "@receivingImage": {
+    "description": ""
+  },
+  "tapToLoad": "Tap to load",
+  "@tapToLoad": {
+    "description": ""
+  },
+  "connectDevice": "Connect Device",
+  "@connectDevice": {
+    "description": "Connection dialog title"
+  },
+  "chooseTransportSubtitle": "Choose Bluetooth, WiFi, or Serial transport",
+  "@chooseTransportSubtitle": {
+    "description": "Connection dialog subtitle describing available transports"
+  },
+  "ble": "BLE",
+  "@ble": {
+    "description": "Bluetooth Low Energy tab label in connection dialog"
+  },
+  "network": "Network",
+  "@network": {
+    "description": "Network tab label in connection dialog"
+  },
+  "serial": "Serial",
+  "@serial": {
+    "description": "Serial tab label in connection dialog"
+  },
+  "scan": "Scan",
+  "@scan": {
+    "description": "Button label to start scanning for devices"
+  },
+  "pressScanToSearchForDevices": "Press scan to search for nearby devices",
+  "@pressScanToSearchForDevices": {
+    "description": "Empty state shown before the first BLE scan"
+  },
+  "failedToConnectToDevice": "Failed to connect to {name}",
+  "@failedToConnectToDevice": {
+    "description": "Error when connecting to a BLE device fails",
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "unknownDevice": "Unknown Device",
+  "@unknownDevice": {
+    "description": "Fallback name for a BLE device without a name"
+  },
+  "showingCachedResultsTapRefresh": "Showing cached results. Tap refresh to rescan.",
+  "@showingCachedResultsTapRefresh": {
+    "description": "Banner shown when cached network scan results are displayed"
+  },
+  "scanningLocalNetworkOnPort": "Scanning local network for MeshCore WiFi devices on port {port}",
+  "@scanningLocalNetworkOnPort": {
+    "description": "Banner shown while scanning the local network",
+    "placeholders": {
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "cancelScanAndAddServer": "Cancel scan and add server",
+  "@cancelScanAndAddServer": {
+    "description": "Tooltip for the add-server button while a network scan is running"
+  },
+  "addServer": "Add server",
+  "@addServer": {
+    "description": "Tooltip for the add-server button"
+  },
+  "scanningProgressIps": "Scanning... {scanned}/{total} IPs",
+  "@scanningProgressIps": {
+    "description": "Network scan progress label",
+    "placeholders": {
+      "scanned": {
+        "type": "int"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "cancelAndEnterManually": "Cancel and enter manually",
+  "@cancelAndEnterManually": {
+    "description": "Button to cancel the network scan and enter a server address manually"
+  },
+  "noRecentOrDiscoveredServers": "No recent or discovered servers yet",
+  "@noRecentOrDiscoveredServers": {
+    "description": "Empty state for the network servers tab"
+  },
+  "recentlyUsed": "Recently used",
+  "@recentlyUsed": {
+    "description": "Section header for recently used servers"
+  },
+  "connecting": "Connecting...",
+  "@connecting": {
+    "description": "Status label while a connection is being established"
+  },
+  "discoveredOnThisNetwork": "Discovered on this network",
+  "@discoveredOnThisNetwork": {
+    "description": "Section header for servers discovered on the local network"
+  },
+  "serverNoLongerAvailable": "Server at {host}:{port} is no longer available. Please scan again to find active servers.",
+  "@serverNoLongerAvailable": {
+    "description": "Error when a previously discovered server does not respond anymore",
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "failedToConnectToHost": "Failed to connect to {host}:{port}",
+  "@failedToConnectToHost": {
+    "description": "Error when a TCP connection attempt fails",
+    "placeholders": {
+      "host": {
+        "type": "String"
+      },
+      "port": {
+        "type": "int"
+      }
+    }
+  },
+  "enterValidIpAddress": "Enter a valid IP address",
+  "@enterValidIpAddress": {
+    "description": "Validation error for the IP address field"
+  },
+  "enterValidTcpPort": "Enter a valid TCP port",
+  "@enterValidTcpPort": {
+    "description": "Validation error for the TCP port field"
+  },
+  "ipAddress": "IP address",
+  "@ipAddress": {
+    "description": "Label for the IP address text field"
+  },
+  "tcpPort": "TCP port",
+  "@tcpPort": {
+    "description": "Label for the TCP port text field"
+  },
+  "customServerPort": "Custom server port",
+  "@customServerPort": {
+    "description": "Helper text for the TCP port text field"
+  },
+  "chat": "Chat",
+  "@chat": {
+    "description": "Chat tab label on the home screen"
+  },
+  "restoringPreviousLink": "Restoring previous link",
+  "@restoringPreviousLink": {
+    "description": "Status text while automatically reconnecting to the last device"
+  },
+  "noDeviceConnected": "No device connected",
+  "@noDeviceConnected": {
+    "description": "Status text when no device is connected"
+  },
+  "sendAdvert": "Send my contact",
+  "@sendAdvert": {
+    "description": "Composer action that broadcasts this device's contact info (advert) to the mesh"
+  },
+  "advertMode": "Send my contact",
+  "@advertMode": {
+    "description": "Title of the sheet choosing how far the contact broadcast travels"
+  },
+  "advertModeSubtitle": "Choose how far your contact info should travel.",
+  "@advertModeSubtitle": {
+    "description": "Subtitle of the contact broadcast mode sheet"
+  },
+  "floodAdvertSent": "Contact sent across the mesh",
+  "@floodAdvertSent": {
+    "description": "Toast after broadcasting contact info via flood (through repeaters)"
+  },
+  "directAdvertSent": "Contact sent to nearby devices",
+  "@directAdvertSent": {
+    "description": "Toast after broadcasting contact info direct (zero-hop, nearby only)"
   }
 }

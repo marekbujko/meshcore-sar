@@ -16,6 +16,7 @@ class _AddChannelSheetState extends State<AddChannelSheet> {
   final _nameController = TextEditingController();
   final _secretController = TextEditingController();
   bool _isCreating = false;
+  bool _obscureSecret = true;
 
   @override
   void dispose() {
@@ -203,8 +204,23 @@ class _AddChannelSheetState extends State<AddChannelSheet> {
                       labelText: l10n.channelSecret,
                       hintText: l10n.channelSecretHint,
                       border: const OutlineInputBorder(),
+                      suffixIcon: IconButton(
+                        onPressed: _isCreating
+                            ? null
+                            : () => setState(() {
+                                _obscureSecret = !_obscureSecret;
+                              }),
+                        icon: Icon(
+                          _obscureSecret
+                              ? Icons.visibility_outlined
+                              : Icons.visibility_off_outlined,
+                        ),
+                        tooltip: _obscureSecret
+                            ? 'Show secret'
+                            : 'Hide secret',
+                      ),
                     ),
-                    obscureText: true,
+                    obscureText: _obscureSecret,
                     enabled: !_isCreating,
                     maxLength: 32,
                     validator: _validateSecret,

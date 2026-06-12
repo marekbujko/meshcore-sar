@@ -148,7 +148,7 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                     child: Column(
                       children: [
                         Text(
-                          'Send SAR marker',
+                          AppLocalizations.of(context)!.sendSarMarker,
                           style: TextStyle(
                             color: colorScheme.onSurface,
                             fontSize: 18,
@@ -156,7 +156,7 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                           ),
                         ),
                         Text(
-                          'Custom cave map point',
+                          AppLocalizations.of(context)!.customCaveMapPoint,
                           style: TextStyle(
                             color: colorScheme.onSurfaceVariant,
                             fontSize: 14,
@@ -231,7 +231,11 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                                 color: Colors.red.withValues(alpha: 0.3),
                               ),
                             ),
-                            child: Text(AppLocalizations.of(context)!.noDestinationsAvailableLabel),
+                            child: Text(
+                              AppLocalizations.of(
+                                context,
+                              )!.noDestinationsAvailableLabel,
+                            ),
                           );
                         }
 
@@ -322,7 +326,7 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                     ),
                     const SizedBox(height: 24),
                     Text(
-                      'Map point',
+                      AppLocalizations.of(context)!.mapPoint,
                       style: TextStyle(
                         color: colorScheme.onSurface,
                         fontSize: 16,
@@ -394,7 +398,9 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                       controller: _notesController,
                       maxLines: 3,
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.addAdditionalDetails,
+                        hintText: AppLocalizations.of(
+                          context,
+                        )!.addAdditionalDetails,
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest,
                         border: OutlineInputBorder(
@@ -426,7 +432,11 @@ class _CustomMapSarUpdateSheetState extends State<CustomMapSarUpdateSheet> {
                         (!_sendToAllContacts && _selectedContact == null)) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text(AppLocalizations.of(context)!.selectMarkerTypeAndDestination),
+                          content: Text(
+                            AppLocalizations.of(
+                              context,
+                            )!.selectMarkerTypeAndDestination,
+                          ),
                         ),
                       );
                       return;

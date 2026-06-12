@@ -229,6 +229,12 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
                     requestingLabel: AppLocalizations.of(
                       context,
                     )!.requestingVoice,
+                    fetchingMissingLabel: AppLocalizations.of(
+                      context,
+                    )!.fetchingMissingVoiceFragments,
+                    receivingVoiceLabel: AppLocalizations.of(
+                      context,
+                    )!.receivingVoice,
                     eta: eta,
                     isSentByMe: widget.isSentByMe,
                     transferCount: transferCount,
@@ -283,32 +289,34 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
     if (resolution.failure == TransmissionTargetFailure.unknownContact) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch voice',
-        'Sender contact is unknown. Sync contacts first.',
+        AppLocalizations.of(context)!.cannotFetchVoice,
+        AppLocalizations.of(context)!.senderContactUnknown,
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.unknownRoute) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch voice',
-        'Sender route is unknown. Sync contacts/path first.',
+        AppLocalizations.of(context)!.cannotFetchVoice,
+        AppLocalizations.of(context)!.senderRouteUnknown,
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.tooFar) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch voice',
-        'Message is too far (${resolution.hops} hops, max ${resolution.maxHops}).',
+        AppLocalizations.of(context)!.cannotFetchVoice,
+        AppLocalizations.of(
+          context,
+        )!.messageTooFar('${resolution.hops}', '${resolution.maxHops}'),
       );
       return;
     }
     if (resolution.failure == TransmissionTargetFailure.unreachable) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch voice',
-        'Sender route did not respond to a path check. Sync contacts/path and try again.',
+        AppLocalizations.of(context)!.cannotFetchVoice,
+        AppLocalizations.of(context)!.senderRouteNoPathResponse,
       );
       return;
     }
@@ -332,24 +340,26 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
       if (resolution.failure == TransmissionTargetFailure.unknownContact) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch voice',
-          'Sender contact is unknown. Sync contacts first.',
+          AppLocalizations.of(context)!.cannotFetchVoice,
+          AppLocalizations.of(context)!.senderContactUnknown,
         );
         return;
       }
       if (resolution.failure == TransmissionTargetFailure.unknownRoute) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch voice',
-          'Sender route is unknown. Sync contacts/path first.',
+          AppLocalizations.of(context)!.cannotFetchVoice,
+          AppLocalizations.of(context)!.senderRouteUnknown,
         );
         return;
       }
       if (resolution.failure == TransmissionTargetFailure.tooFar) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch voice',
-          'Message is too far (${resolution.hops} hops, max ${resolution.maxHops}).',
+          AppLocalizations.of(context)!.cannotFetchVoice,
+          AppLocalizations.of(
+            context,
+          )!.messageTooFar('${resolution.hops}', '${resolution.maxHops}'),
         );
         return;
       }
@@ -359,8 +369,8 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
       if (!routeVerified) {
         _clearRequestState();
         await _showBlockingAlert(
-          'Cannot fetch voice',
-          'Sender route did not respond on the raw transport path.',
+          AppLocalizations.of(context)!.cannotFetchVoice,
+          AppLocalizations.of(context)!.senderRouteNoRawResponse,
         );
         return;
       }
@@ -368,7 +378,9 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
 
     if (sender.routeHopCount >= 2) {
       _showToast(
-        'Voice fetch over ${sender.routeHopCount} hops may take a while.',
+        AppLocalizations.of(
+          context,
+        )!.voiceFetchOverHops('${sender.routeHopCount}'),
       );
     }
 
@@ -376,8 +388,8 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
     if (deviceKey == null || deviceKey.length < 6) {
       _clearRequestState();
       await _showBlockingAlert(
-        'Cannot fetch voice',
-        'Device key is unavailable.',
+        AppLocalizations.of(context)!.cannotFetchVoice,
+        AppLocalizations.of(context)!.deviceKeyUnavailable,
       );
       return;
     }
@@ -487,12 +499,12 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
     if (!mounted) return;
     _requestTimeoutTimer?.cancel();
     context.read<VoiceProvider>().cancelIncomingSession(sessionId);
-    _showToast('Voice receive canceled');
+    _showToast(AppLocalizations.of(context)!.voiceReceiveCanceled);
     setState(() {
       _isRequesting = false;
       _isPartialRequest = false;
       _autoPlayWhenReady = false;
-      _errorText = 'Voice receive canceled';
+      _errorText = AppLocalizations.of(context)!.voiceReceiveCanceled;
     });
   }
 
@@ -539,6 +551,8 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
     required bool isPartialRequest,
     required String? errorText,
     required String requestingLabel,
+    required String fetchingMissingLabel,
+    required String receivingVoiceLabel,
     required Duration? eta,
     required bool isSentByMe,
     required int transferCount,
@@ -547,12 +561,12 @@ class _VoiceMessageBubbleState extends State<VoiceMessageBubble> {
     final progress = total > 0 ? ' ($received/$total)' : '';
     if (isRequesting) {
       final actionLabel = isPartialRequest
-          ? 'Fetching missing voice fragments'
+          ? fetchingMissingLabel
           : requestingLabel;
       return '$actionLabel$progress · ${_formatEta(eta)} · $txEstimateLabel';
     }
     if (isReceivingData) {
-      return 'Receiving voice$progress · ${_formatEta(eta)} · $txEstimateLabel';
+      return '$receivingVoiceLabel$progress · ${_formatEta(eta)} · $txEstimateLabel';
     }
     if (!isComplete && total > 0) {
       return isSentByMe

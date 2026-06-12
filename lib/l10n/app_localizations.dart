@@ -5376,6 +5376,30 @@ abstract class AppLocalizations {
   /// **'Size, compression, and preview'**
   String get sizeCompressionAndPreview;
 
+  /// No description provided for @simpleMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Simple mode'**
+  String get simpleMode;
+
+  /// No description provided for @simpleModeDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Only chat and map with favourite contacts'**
+  String get simpleModeDescription;
+
+  /// No description provided for @simpleModeRequiresLockedDestination.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable \"Lock destination\" with a channel first to use Simple mode'**
+  String get simpleModeRequiresLockedDestination;
+
+  /// No description provided for @noFavouriteContacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite contacts'**
+  String get noFavouriteContacts;
+
   /// No description provided for @skip.
   ///
   /// In en, this message translates to:
@@ -5585,6 +5609,702 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Region scope cleared'**
   String get regionScopeCleared;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Select a channel, contact, or room first'**
+  String get selectDestinationFirst;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Recipient is no longer available'**
+  String get recipientNoLongerAvailable;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send: {error}'**
+  String failedToSendMessage(String error);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Tic-Tac-Toe works only in direct messages. Choose a contact first.'**
+  String get tictactoeDirectOnly;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Device key is unavailable'**
+  String get deviceKeyUnavailable;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image compression failed'**
+  String get imageCompressionFailed;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image fragmentation failed'**
+  String get imageFragmentationFailed;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to announce image'**
+  String get failedToAnnounceImage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'No recipient selected'**
+  String get noRecipientSelected;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image send failed'**
+  String get imageSendFailed;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Microphone permission required for voice'**
+  String get microphonePermissionRequiredForVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Recording discarded'**
+  String get recordingDiscarded;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'You are about to send {mediaType} to the Public Channel. This is not advised because everyone on the mesh may receive it. Choose a private or tagged channel unless this is what you want.'**
+  String publicChannelMediaWarning(String mediaType);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Select a private channel to share your location.'**
+  String get selectPrivateChannelToShareLocation;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Stop sharing my location'**
+  String get stopSharingMyLocation;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Share my location'**
+  String get shareMyLocation;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Stop recording'**
+  String get stopRecording;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Record voice'**
+  String get recordVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'More actions'**
+  String get moreActions;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'No messages in this filter'**
+  String get noMessagesInFilter;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'No matches in this filter'**
+  String get noMatchesInFilter;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sync failed: {error}'**
+  String syncFailed(String error);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid link'**
+  String get invalidLink;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot open link'**
+  String get cannotOpenLink;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to open link'**
+  String get failedToOpenLink;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to resend message'**
+  String get failedToResendMessage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Retry failed: {error}'**
+  String retryFailed(String error);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Delete drawing & message'**
+  String get deleteDrawingAndMessage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Last echo relay'**
+  String get lastEchoRelay;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Last echo path'**
+  String get lastEchoPath;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Last echo bytes report'**
+  String get lastEchoBytesReport;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'No GPS coordinates available'**
+  String get noGpsCoordinatesAvailable;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Not a SAR marker'**
+  String get notASarMarker;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save template: {error}'**
+  String failedToSaveTemplate(String error);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Drawing not found'**
+  String get drawingNotFound;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown drawing type'**
+  String get unknownDrawingType;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Custom map marker'**
+  String get customMapMarker;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Point: {point}'**
+  String customMapPointLabel(String point);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Map ID: {id}'**
+  String mapIdLabel(String id);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot fetch voice'**
+  String get cannotFetchVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sender contact is unknown. Sync contacts first.'**
+  String get senderContactUnknown;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sender route is unknown. Sync contacts/path first.'**
+  String get senderRouteUnknown;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Message is too far ({hops} hops, max {maxHops}).'**
+  String messageTooFar(String hops, String maxHops);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sender route did not respond to a path check. Sync contacts/path and try again.'**
+  String get senderRouteNoPathResponse;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sender route did not respond on the raw transport path.'**
+  String get senderRouteNoRawResponse;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Voice fetch over {hops} hops may take a while.'**
+  String voiceFetchOverHops(String hops);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Voice receive canceled'**
+  String get voiceReceiveCanceled;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching missing voice fragments'**
+  String get fetchingMissingVoiceFragments;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving voice'**
+  String get receivingVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Cannot fetch image'**
+  String get cannotFetchImage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image fetch over {hops} hops may take a while.'**
+  String imageFetchOverHops(String hops);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image is already being received'**
+  String get imageAlreadyBeingReceived;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Load image'**
+  String get loadImage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image fetch failed to send request'**
+  String get imageFetchFailedToSendRequest;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image unavailable right now'**
+  String get imageUnavailable;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image fetch timed out'**
+  String get imageFetchTimedOut;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Image receive canceled'**
+  String get imageReceiveCanceled;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Close image preview'**
+  String get closeImagePreview;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Recording... release to send voice'**
+  String get recordingReleaseToSend;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Sending voice...'**
+  String get sendingVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Send (long press to record voice)'**
+  String get sendLongPressToRecordVoice;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Discard recording'**
+  String get discardRecording;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 hop} other{{count} hops}}'**
+  String hopCount(num count);
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Broadcast lanes for nearby mesh traffic'**
+  String get channelsSectionDescription;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Shared spaces for ongoing team coordination'**
+  String get roomsSectionDescription;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Direct people and devices you can reach'**
+  String get contactsSectionDescription;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'No recent chatters'**
+  String get noRecentChatters;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get public;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send Tic-Tac-Toe move'**
+  String get failedToSendTicTacToeMove;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'You won'**
+  String get youWon;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent won'**
+  String get opponentWon;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Draw'**
+  String get gameDraw;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Your turn'**
+  String get yourTurn;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Opponent turn'**
+  String get opponentTurn;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter valid coordinates'**
+  String get pleaseEnterValidCoordinates;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Location not available'**
+  String get locationNotAvailable;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Custom cave map point'**
+  String get customCaveMapPoint;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Map point'**
+  String get mapPoint;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Fetching missing fragments…'**
+  String get fetchingMissingImageFragments;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Loading…'**
+  String get loadingImage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Receiving…'**
+  String get receivingImage;
+
+  ///
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to load'**
+  String get tapToLoad;
+
+  /// Connection dialog title
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Device'**
+  String get connectDevice;
+
+  /// Connection dialog subtitle describing available transports
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Bluetooth, WiFi, or Serial transport'**
+  String get chooseTransportSubtitle;
+
+  /// Bluetooth Low Energy tab label in connection dialog
+  ///
+  /// In en, this message translates to:
+  /// **'BLE'**
+  String get ble;
+
+  /// Network tab label in connection dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Network'**
+  String get network;
+
+  /// Serial tab label in connection dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Serial'**
+  String get serial;
+
+  /// Button label to start scanning for devices
+  ///
+  /// In en, this message translates to:
+  /// **'Scan'**
+  String get scan;
+
+  /// Empty state shown before the first BLE scan
+  ///
+  /// In en, this message translates to:
+  /// **'Press scan to search for nearby devices'**
+  String get pressScanToSearchForDevices;
+
+  /// Error when connecting to a BLE device fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to connect to {name}'**
+  String failedToConnectToDevice(String name);
+
+  /// Fallback name for a BLE device without a name
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown Device'**
+  String get unknownDevice;
+
+  /// Banner shown when cached network scan results are displayed
+  ///
+  /// In en, this message translates to:
+  /// **'Showing cached results. Tap refresh to rescan.'**
+  String get showingCachedResultsTapRefresh;
+
+  /// Banner shown while scanning the local network
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning local network for MeshCore WiFi devices on port {port}'**
+  String scanningLocalNetworkOnPort(int port);
+
+  /// Tooltip for the add-server button while a network scan is running
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scan and add server'**
+  String get cancelScanAndAddServer;
+
+  /// Tooltip for the add-server button
+  ///
+  /// In en, this message translates to:
+  /// **'Add server'**
+  String get addServer;
+
+  /// Network scan progress label
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning... {scanned}/{total} IPs'**
+  String scanningProgressIps(int scanned, String total);
+
+  /// Button to cancel the network scan and enter a server address manually
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel and enter manually'**
+  String get cancelAndEnterManually;
+
+  /// Empty state for the network servers tab
+  ///
+  /// In en, this message translates to:
+  /// **'No recent or discovered servers yet'**
+  String get noRecentOrDiscoveredServers;
+
+  /// Section header for recently used servers
+  ///
+  /// In en, this message translates to:
+  /// **'Recently used'**
+  String get recentlyUsed;
+
+  /// Status label while a connection is being established
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting...'**
+  String get connecting;
+
+  /// Section header for servers discovered on the local network
+  ///
+  /// In en, this message translates to:
+  /// **'Discovered on this network'**
+  String get discoveredOnThisNetwork;
+
+  /// Error when a previously discovered server does not respond anymore
+  ///
+  /// In en, this message translates to:
+  /// **'Server at {host}:{port} is no longer available. Please scan again to find active servers.'**
+  String serverNoLongerAvailable(String host, int port);
+
+  /// Error when a TCP connection attempt fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to connect to {host}:{port}'**
+  String failedToConnectToHost(String host, int port);
+
+  /// Validation error for the IP address field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid IP address'**
+  String get enterValidIpAddress;
+
+  /// Validation error for the TCP port field
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid TCP port'**
+  String get enterValidTcpPort;
+
+  /// Label for the IP address text field
+  ///
+  /// In en, this message translates to:
+  /// **'IP address'**
+  String get ipAddress;
+
+  /// Label for the TCP port text field
+  ///
+  /// In en, this message translates to:
+  /// **'TCP port'**
+  String get tcpPort;
+
+  /// Helper text for the TCP port text field
+  ///
+  /// In en, this message translates to:
+  /// **'Custom server port'**
+  String get customServerPort;
+
+  /// Chat tab label on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Chat'**
+  String get chat;
+
+  /// Status text while automatically reconnecting to the last device
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring previous link'**
+  String get restoringPreviousLink;
+
+  /// Status text when no device is connected
+  ///
+  /// In en, this message translates to:
+  /// **'No device connected'**
+  String get noDeviceConnected;
+
+  /// Composer action that broadcasts this device's contact info (advert) to the mesh
+  ///
+  /// In en, this message translates to:
+  /// **'Send my contact'**
+  String get sendAdvert;
+
+  /// Title of the sheet choosing how far the contact broadcast travels
+  ///
+  /// In en, this message translates to:
+  /// **'Send my contact'**
+  String get advertMode;
+
+  /// Subtitle of the contact broadcast mode sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Choose how far your contact info should travel.'**
+  String get advertModeSubtitle;
+
+  /// Toast after broadcasting contact info via flood (through repeaters)
+  ///
+  /// In en, this message translates to:
+  /// **'Contact sent across the mesh'**
+  String get floodAdvertSent;
+
+  /// Toast after broadcasting contact info direct (zero-hop, nearby only)
+  ///
+  /// In en, this message translates to:
+  /// **'Contact sent to nearby devices'**
+  String get directAdvertSent;
 }
 
 class _AppLocalizationsDelegate

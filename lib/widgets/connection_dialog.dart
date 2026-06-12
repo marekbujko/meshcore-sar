@@ -282,6 +282,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
     required String serverKey,
   }) async {
     final connectionProvider = context.read<ConnectionProvider>();
+    final l10n = AppLocalizations.of(context)!;
 
     setState(() {
       _connectingToServerKey = serverKey;
@@ -291,7 +292,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
       final success = await connectionProvider.connectTcp(host, port);
       if (!success) {
         throw Exception(
-          connectionProvider.error ?? 'Failed to connect to $host:$port',
+          connectionProvider.error ?? l10n.failedToConnectToHost(host, port),
         );
       }
       await _rememberRecentServer(name: name, host: host, port: port);
@@ -311,6 +312,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
   Widget build(BuildContext context) {
     final connectionProvider = context.watch<ConnectionProvider>();
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.9,
@@ -351,7 +353,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                       child: Column(
                         children: [
                           Text(
-                            'Connect Device',
+                            l10n.connectDevice,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
@@ -359,7 +361,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Choose Bluetooth, WiFi, or Serial transport',
+                            l10n.chooseTransportSubtitle,
                             textAlign: TextAlign.center,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
@@ -382,10 +384,16 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                   indicatorSize: TabBarIndicatorSize.tab,
                   labelColor: theme.colorScheme.onPrimaryContainer,
                   unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-                  tabs: const [
-                    Tab(text: 'BLE', icon: Icon(Icons.bluetooth_rounded)),
-                    Tab(text: 'Network', icon: Icon(Icons.wifi_rounded)),
-                    Tab(text: 'Serial', icon: Icon(Icons.usb_rounded)),
+                  tabs: [
+                    Tab(
+                      text: l10n.ble,
+                      icon: const Icon(Icons.bluetooth_rounded),
+                    ),
+                    Tab(
+                      text: l10n.network,
+                      icon: const Icon(Icons.wifi_rounded),
+                    ),
+                    Tab(text: l10n.serial, icon: const Icon(Icons.usb_rounded)),
                   ],
                 ),
               ],
@@ -678,8 +686,10 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                   icon: Icons.bluetooth_searching_rounded,
                   title: _hasRequestedBleScan
                       ? l10n.noDevicesFound
-                      : 'Press scan to search for nearby devices',
-                  actionLabel: _hasRequestedBleScan ? l10n.scanAgain : 'Scan',
+                      : l10n.pressScanToSearchForDevices,
+                  actionLabel: _hasRequestedBleScan
+                      ? l10n.scanAgain
+                      : l10n.scan,
                   onAction: _refreshBleDevices,
                 )
               : ListView.builder(
@@ -704,10 +714,10 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                         if (!success) {
                           final name = device.platformName.isNotEmpty
                               ? device.platformName
-                              : 'device';
+                              : l10n.device;
                           throw Exception(
                             connectionProvider.error ??
-                                'Failed to connect to $name',
+                                l10n.failedToConnectToDevice(name),
                           );
                         }
                         _closeOnSuccessfulConnection();
@@ -727,7 +737,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                       iconColor: signalColor,
                       title: device.platformName.isNotEmpty
                           ? device.platformName
-                          : 'Unknown Device',
+                          : l10n.unknownDevice,
                       subtitle: AppLocalizations.of(context)!.signalDbm(rssi.toString()),
                       trailing: isConnecting
                           ? const SizedBox(
@@ -752,6 +762,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
   }
 
   Widget _buildNetworkServersTab() {
+    final l10n = AppLocalizations.of(context)!;
     final bool showingCachedResults =
         !_networkScanner.isScanning &&
         _networkScanner.hasCachedResults &&
@@ -771,12 +782,14 @@ class _ConnectionDialogState extends State<ConnectionDialog>
               ? Icons.cached_rounded
               : Icons.wifi_find_rounded,
           message: showingCachedResults
-              ? 'Showing cached results. Tap refresh to rescan.'
-              : 'Scanning local network for MeshCore WiFi devices on port 5000',
+              ? l10n.showingCachedResultsTapRefresh
+              : l10n.scanningLocalNetworkOnPort(
+                  NetworkScannerService.defaultPort,
+                ),
           secondaryActionIcon: Icons.add_rounded,
           secondaryActionTooltip: _networkScanner.isScanning
-              ? 'Cancel scan and add server'
-              : 'Add server',
+              ? l10n.cancelScanAndAddServer
+              : l10n.addServer,
           onSecondaryAction: isAnyConnectionInProgress
               ? null
               : _connectManualTcpHost,
@@ -792,7 +805,10 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Scanning... $_scannedCount/${_totalToScan > 0 ? _totalToScan : "?"} IPs',
+                  l10n.scanningProgressIps(
+                    _scannedCount,
+                    _totalToScan > 0 ? '$_totalToScan' : '?',
+                  ),
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
                 const SizedBox(height: 8),
@@ -801,7 +817,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                   child: TextButton.icon(
                     onPressed: _connectManualTcpHost,
                     icon: const Icon(Icons.close_rounded),
-                    label: const Text('Cancel and enter manually'),
+                    label: Text(l10n.cancelAndEnterManually),
                   ),
                 ),
               ],
@@ -811,14 +827,14 @@ class _ConnectionDialogState extends State<ConnectionDialog>
           child: showEmptyState
               ? _buildEmptyState(
                   icon: Icons.wifi_off_rounded,
-                  title: 'No recent or discovered servers yet',
-                  actionLabel: 'Scan Again',
+                  title: l10n.noRecentOrDiscoveredServers,
+                  actionLabel: l10n.scanAgain,
                   onAction: _startNetworkScan,
                 )
               : ListView(
                   children: [
                     if (hasRecentServers)
-                      _buildNetworkSectionHeader('Recently used'),
+                      _buildNetworkSectionHeader(l10n.recentlyUsed),
                     for (final server in _recentServers)
                       _buildTransportCard(
                         icon: Icons.history_rounded,
@@ -826,7 +842,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                         title: server.name,
                         subtitle:
                             _connectingToServerKey == '${server.host}:${server.port}'
-                            ? 'Connecting...'
+                            ? l10n.connecting
                             : '${server.host}:${server.port}',
                         trailing:
                             _connectingToServerKey == '${server.host}:${server.port}'
@@ -859,7 +875,9 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                               ),
                       ),
                     if (hasDiscoveredServers)
-                      _buildNetworkSectionHeader('Discovered on this network'),
+                      _buildNetworkSectionHeader(
+                        l10n.discoveredOnThisNetwork,
+                      ),
                     for (final server in _discoveredServers)
                       Builder(
                         builder: (context) {
@@ -874,7 +892,10 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                               );
                               if (!isAvailable) {
                                 throw Exception(
-                                  'Server at ${server.ipAddress}:${server.port} is no longer available. Please scan again to find active servers.',
+                                  l10n.serverNoLongerAvailable(
+                                    server.ipAddress,
+                                    server.port,
+                                  ),
                                 );
                               }
 
@@ -894,7 +915,7 @@ class _ConnectionDialogState extends State<ConnectionDialog>
                             iconColor: Colors.green,
                             title: server.displayName,
                             subtitle: isConnectingToThisServer
-                                ? 'Connecting...'
+                                ? l10n.connecting
                                 : '${server.ipAddress}:${server.port} • ${server.responseTime}ms',
                             trailing: isConnectingToThisServer
                                 ? const SizedBox(
@@ -1002,6 +1023,7 @@ class _ManualTcpHostDialogState extends State<_ManualTcpHostDialog> {
   }
 
   void _submit() {
+    final l10n = AppLocalizations.of(context)!;
     final host = _hostController.text.trim();
     final portText = _portController.text.trim();
     final parsedAddress = InternetAddress.tryParse(host);
@@ -1010,10 +1032,10 @@ class _ManualTcpHostDialogState extends State<_ManualTcpHostDialog> {
     String? portErrorText;
 
     if (parsedAddress == null) {
-      hostErrorText = 'Enter a valid IP address';
+      hostErrorText = l10n.enterValidIpAddress;
     }
     if (parsedPort == null || parsedPort < 1 || parsedPort > 65535) {
-      portErrorText = 'Enter a valid TCP port';
+      portErrorText = l10n.enterValidTcpPort;
     }
     if (hostErrorText != null || portErrorText != null) {
       setState(() {
@@ -1039,7 +1061,7 @@ class _ManualTcpHostDialogState extends State<_ManualTcpHostDialog> {
             autofocus: true,
             keyboardType: TextInputType.url,
             decoration: InputDecoration(
-              labelText: 'IP address',
+              labelText: AppLocalizations.of(context)!.ipAddress,
               hintText: '192.168.1.42',
               border: const OutlineInputBorder(),
               errorText: _hostErrorText,
@@ -1059,9 +1081,9 @@ class _ManualTcpHostDialogState extends State<_ManualTcpHostDialog> {
             controller: _portController,
             keyboardType: TextInputType.number,
             decoration: InputDecoration(
-              labelText: 'TCP port',
+              labelText: AppLocalizations.of(context)!.tcpPort,
               hintText: NetworkScannerService.defaultPort.toString(),
-              helperText: 'Custom server port',
+              helperText: AppLocalizations.of(context)!.customServerPort,
               border: const OutlineInputBorder(),
               errorText: _portErrorText,
             ),

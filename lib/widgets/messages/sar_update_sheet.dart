@@ -234,7 +234,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
       if (!mounted) return;
       if (!serviceEnabled) {
         setState(() {
-          _locationError = 'Location services are disabled';
+          _locationError = AppLocalizations.of(
+            context,
+          )!.locationServicesDisabled;
           _loadingLocation = false;
         });
         return;
@@ -248,7 +250,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
         if (!mounted) return;
         if (permission == LocationPermission.denied) {
           setState(() {
-            _locationError = 'Location permission denied';
+            _locationError = AppLocalizations.of(
+              context,
+            )!.locationPermissionDenied;
             _loadingLocation = false;
           });
           return;
@@ -257,7 +261,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
 
       if (permission == LocationPermission.deniedForever) {
         setState(() {
-          _locationError = 'Location permission permanently denied';
+          _locationError = AppLocalizations.of(
+            context,
+          )!.locationPermissionPermanentlyDenied;
           _loadingLocation = false;
         });
         return;
@@ -399,7 +405,8 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                         final teamContacts = contactsProvider.chatContacts;
 
                         // Get rooms and channels
-                        final roomsAndChannels = contactsProvider.roomsAndChannels;
+                        final roomsAndChannels =
+                            contactsProvider.roomsAndChannels;
 
                         // Build destinations list with priority:
                         // 1. Team contacts first (most reliable for SAR)
@@ -463,7 +470,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                           ),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<String>(
-                              value: _sendToAllContacts ? 'all_contacts' : _selectedContact?.publicKeyHex,
+                              value: _sendToAllContacts
+                                  ? 'all_contacts'
+                                  : _selectedContact?.publicKeyHex,
                               hint: Row(
                                 children: [
                                   Icon(
@@ -508,7 +517,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                                         SizedBox(width: 12),
                                         Expanded(
                                           child: Text(
-                                            AppLocalizations.of(context)!.allTeamContacts,
+                                            AppLocalizations.of(
+                                              context,
+                                            )!.allTeamContacts,
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -522,9 +533,11 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                                   if (contact.isChat) {
                                     iconData = Icons.person; // Team member
                                   } else if (contact.isRoom) {
-                                    iconData = Icons.storage; // Room (persistent)
+                                    iconData =
+                                        Icons.storage; // Room (persistent)
                                   } else {
-                                    iconData = Icons.public; // Channel (ephemeral)
+                                    iconData =
+                                        Icons.public; // Channel (ephemeral)
                                   }
 
                                   return DropdownMenuItem<String>(
@@ -574,7 +587,8 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                     Consumer<ContactsProvider>(
                       builder: (context, contactsProvider, child) {
                         if (_sendToAllContacts) {
-                          final chatContactsCount = contactsProvider.chatContacts.length;
+                          final chatContactsCount =
+                              contactsProvider.chatContacts.length;
                           return Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
@@ -596,7 +610,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                                 SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
-                                    AppLocalizations.of(context)!.directMessagesInfo(chatContactsCount),
+                                    AppLocalizations.of(
+                                      context,
+                                    )!.directMessagesInfo(chatContactsCount),
                                     style: TextStyle(
                                       color: Colors.green.shade900,
                                       fontSize: 11,
@@ -878,7 +894,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  AppLocalizations.of(context)!.manualCoordinates,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.manualCoordinates,
                                   style: TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w600,
@@ -886,7 +904,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                                   ),
                                 ),
                                 Text(
-                                  AppLocalizations.of(context)!.enterCoordinatesManually,
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.enterCoordinatesManually,
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: colorScheme.onSurfaceVariant,
@@ -925,7 +945,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                           color: colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)!.latitudeLabel,
+                          labelText: AppLocalizations.of(
+                            context,
+                          )!.latitudeLabel,
                           hintText: '46.0569',
                           errorText: _latitudeError,
                           filled: true,
@@ -951,7 +973,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                           color: colorScheme.onSurface,
                         ),
                         decoration: InputDecoration(
-                          labelText: AppLocalizations.of(context)!.longitudeLabel,
+                          labelText: AppLocalizations.of(
+                            context,
+                          )!.longitudeLabel,
                           hintText: '14.5058',
                           errorText: _longitudeError,
                           filled: true,
@@ -982,7 +1006,9 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                             SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                AppLocalizations.of(context)!.exampleCoordinates,
+                                AppLocalizations.of(
+                                  context,
+                                )!.exampleCoordinates,
                                 style: const TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue,
@@ -1089,8 +1115,12 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                                   SnackBar(
                                     content: Text(
                                       _useManualCoordinates
-                                          ? 'Please enter valid coordinates'
-                                          : 'Location not available',
+                                          ? AppLocalizations.of(
+                                              context,
+                                            )!.pleaseEnterValidCoordinates
+                                          : AppLocalizations.of(
+                                              context,
+                                            )!.locationNotAvailable,
                                     ),
                                     backgroundColor: Colors.red,
                                   ),
@@ -1117,7 +1147,8 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                             }
 
                             // Validate location accuracy (warn if >50m) - only for GPS
-                            if (!_useManualCoordinates && position.accuracy > 50.0) {
+                            if (!_useManualCoordinates &&
+                                position.accuracy > 50.0) {
                               final shouldContinue = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
@@ -1173,13 +1204,14 @@ class _SarUpdateSheetState extends State<SarUpdateSheet> {
                               _sendToAllContacts
                                   ? null
                                   : (_selectedContact!.isChannel
-                                      ? null
-                                      : _selectedContact!.publicKey),
+                                        ? null
+                                        : _selectedContact!.publicKey),
                               _sendToAllContacts
                                   ? false
                                   : _selectedContact!.isChannel,
                               _sendToAllContacts,
-                              _selectedTemplate!.getColorIndex(), // Include color index
+                              _selectedTemplate!
+                                  .getColorIndex(), // Include color index
                             );
                             if (context.mounted) {
                               Navigator.pop(context);

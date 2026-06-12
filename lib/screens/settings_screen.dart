@@ -32,6 +32,7 @@ import '../services/profile_manager.dart';
 import '../services/profile_workspace_coordinator.dart';
 import '../services/profiles_feature_service.dart';
 import '../utils/sample_data_generator.dart';
+import '../utils/toast_logger.dart';
 import '../utils/image_message_parser.dart';
 import '../utils/voice_message_parser.dart';
 import '../theme/app_theme.dart';
@@ -188,8 +189,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
     setState(() {
       _messageDestinationLockEnabled = lockedDestination != null;
-      _messageDestinationLockType =
-          lockedDestination?['publicKey'] == null
+      _messageDestinationLockType = lockedDestination?['publicKey'] == null
           ? MessageDestinationPreferences.destinationTypeChannel
           : lockedDestination?['type'] ??
                 MessageDestinationPreferences.destinationTypeChannel;
@@ -212,9 +212,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
       });
     final rooms = List<Contact>.from(contactsProvider.rooms)
       ..sort(
-        (a, b) => a.displayName.toLowerCase().compareTo(
-          b.displayName.toLowerCase(),
-        ),
+        (a, b) =>
+            a.displayName.toLowerCase().compareTo(b.displayName.toLowerCase()),
       );
 
     return [...channels, ...rooms];
@@ -259,6 +258,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
       type: nextType,
       recipientPublicKey: enabled ? nextRecipientPublicKey : null,
     );
+
+    if (!mounted) return;
+
+    // Simple mode requires a locked destination; disabling the lock exits it.
+    final appProvider = context.read<AppProvider>();
+    if (!enabled && appProvider.isSimpleMode) {
+      await appProvider.toggleSimpleMode(false);
+    }
 
     if (!mounted) return;
 
@@ -547,7 +554,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             ListTile(
               leading: const Icon(Icons.block),
-              title: Text(AppLocalizations.of(context)!.disableFastGpsPublishing),
+              title: Text(
+                AppLocalizations.of(context)!.disableFastGpsPublishing,
+              ),
               trailing: _fastLocationChannelIdx == null
                   ? const Icon(Icons.check)
                   : null,
@@ -651,7 +660,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToLoadPreviewImage(e.toString())),
+          content: Text(
+            AppLocalizations.of(
+              context,
+            )!.failedToLoadPreviewImage(e.toString()),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -804,7 +817,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(AppLocalizations.of(context)!.errorCheckingForUpdates(e.toString())),
+            content: Text(
+              AppLocalizations.of(
+                context,
+              )!.errorCheckingForUpdates(e.toString()),
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -997,7 +1014,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
       debugPrint('Error handling location permission: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context)!.errorGeneric(e.toString())), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text(
+            AppLocalizations.of(context)!.errorGeneric(e.toString()),
+          ),
+          backgroundColor: Colors.red,
+        ),
       );
     }
   }
@@ -1158,968 +1180,1084 @@ class _SettingsScreenState extends State<SettingsScreen> {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(12, 8, 12, 24),
           children: [
-          // ── Appearance ──
-          _buildSection(
-            icon: Icons.palette_rounded,
-            title: AppLocalizations.of(context)!.appearance,
-            subtitle: AppLocalizations.of(context)!.themeLanguageAndDisplayPreferences,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.palette, size: 20),
-              title: Text(l10n.theme),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    AppTheme.getThemeDisplayName(_selectedTheme),
-                    style: Theme.of(context).textTheme.bodySmall,
+            // ── Appearance ──
+            _buildSection(
+              icon: Icons.palette_rounded,
+              title: AppLocalizations.of(context)!.appearance,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.themeLanguageAndDisplayPreferences,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.palette, size: 20),
+                  title: Text(l10n.theme),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        AppTheme.getThemeDisplayName(_selectedTheme),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
                   ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () => _showThemeDialog(),
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.language, size: 20),
-              title: Text(l10n.language),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    LocalePreferences.getDisplayName(_selectedLocale),
-                    style: Theme.of(context).textTheme.bodySmall,
+                  onTap: () => _showThemeDialog(),
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.language, size: 20),
+                  title: Text(l10n.language),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        LocalePreferences.getDisplayName(_selectedLocale),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
                   ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: () => _showLanguageDialog(),
+                  onTap: () => _showLanguageDialog(),
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.radar, size: 20),
+                  title: Text(l10n.showRxTxIndicators),
+                  value: _showRxTxIndicators,
+                  onChanged: (value) async {
+                    setState(() => _showRxTxIndicators = value);
+                    await _saveRxTxPreference(value);
+                  },
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.format_size, size: 20),
+                    title: Text(l10n.messageFontSize),
+                    trailing: SizedBox(
+                      width: 140,
+                      child: Slider(
+                        value: appProvider.messageFontScale,
+                        min: 0.85,
+                        max: 1.4,
+                        divisions: 11,
+                        label:
+                            '${(appProvider.messageFontScale * 100).round()}%',
+                        onChanged: (value) {
+                          appProvider.setMessageFontScale(value);
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.radar, size: 20),
-              title: Text(l10n.showRxTxIndicators),
-              value: _showRxTxIndicators,
-              onChanged: (value) async {
-                setState(() => _showRxTxIndicators = value);
-                await _saveRxTxPreference(value);
-              },
+            const SizedBox(height: 12),
+
+            // ── Notifications ──
+            _buildSection(
+              icon: Icons.notifications_outlined,
+              title: AppLocalizations.of(context)!.notifications,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.controlWhichAlertsYouReceive,
+              children: [
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.chat_bubble_outline, size: 20),
+                  title: Text(l10n.messageNotifications),
+                  value: _messageNotificationsEnabled,
+                  onChanged: (value) async {
+                    setState(() => _messageNotificationsEnabled = value);
+                    await NotificationService().setMessageNotificationsEnabled(
+                      value,
+                    );
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.warning_amber_outlined, size: 20),
+                  title: Text(l10n.sarAlerts),
+                  value: _sarNotificationsEnabled,
+                  onChanged: (value) async {
+                    setState(() => _sarNotificationsEnabled = value);
+                    await NotificationService().setSarNotificationsEnabled(
+                      value,
+                    );
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.contact_page_outlined, size: 20),
+                  title: Text(l10n.discoveryNotifications),
+                  value: _discoveryNotificationsEnabled,
+                  onChanged: (value) async {
+                    setState(() => _discoveryNotificationsEnabled = value);
+                    await NotificationService()
+                        .setDiscoveryNotificationsEnabled(value);
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.system_update, size: 20),
+                  title: Text(l10n.updateNotifications),
+                  value: _updateNotificationsEnabled,
+                  onChanged: (value) async {
+                    setState(() => _updateNotificationsEnabled = value);
+                    await NotificationService().setUpdateNotificationsEnabled(
+                      value,
+                    );
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(
+                    Icons.visibility_off_outlined,
+                    size: 20,
+                  ),
+                  title: Text(l10n.muteWhileAppIsOpen),
+                  subtitle: Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.suppressNotificationsWhileInForeground,
+                  ),
+                  value: _muteForegroundNotifications,
+                  onChanged: (value) async {
+                    setState(() => _muteForegroundNotifications = value);
+                    await NotificationService().setMuteForegroundNotifications(
+                      value,
+                    );
+                  },
+                ),
+              ],
             ),
+            const SizedBox(height: 12),
+
+            // ── Tabs & Navigation ──
             Consumer<AppProvider>(
-              builder: (context, appProvider, child) => ListTile(
-                dense: true,
-                leading: const Icon(Icons.format_size, size: 20),
-                title: Text(l10n.messageFontSize),
-                trailing: SizedBox(
-                  width: 140,
-                  child: Slider(
-                    value: appProvider.messageFontScale,
-                    min: 0.85,
-                    max: 1.4,
-                    divisions: 11,
-                    label: '${(appProvider.messageFontScale * 100).round()}%',
-                    onChanged: (value) {
-                      appProvider.setMessageFontScale(value);
+              builder: (context, appProvider, child) => _buildSection(
+                icon: Icons.dashboard_customize_rounded,
+                title: AppLocalizations.of(context)!.tabsAndNavigation,
+                subtitle: AppLocalizations.of(
+                  context,
+                )!.chooseWhichTabsAndContactSectionsToShow,
+                children: [
+                  SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(
+                      Icons.center_focus_strong_outlined,
+                      size: 20,
+                    ),
+                    title: Text(l10n.simpleMode),
+                    subtitle: Text(l10n.simpleModeDescription),
+                    value: appProvider.isSimpleMode,
+                    onChanged: (value) async {
+                      if (value && !_messageDestinationLockEnabled) {
+                        ToastLogger.error(
+                          context,
+                          AppLocalizations.of(
+                            context,
+                          )!.simpleModeRequiresLockedDestination,
+                        );
+                        return;
+                      }
+                      await appProvider.toggleSimpleMode(value);
+                    },
+                  ),
+                  SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.map_outlined, size: 20),
+                    title: Text(l10n.disableMap),
+                    value: !appProvider.isMapEnabled,
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (value) async {
+                            await appProvider.toggleMapEnabled(!value);
+                          },
+                  ),
+                  SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.contacts_outlined, size: 20),
+                    title: Text(l10n.disableContacts),
+                    value: !appProvider.isContactsEnabled,
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (value) async {
+                            await appProvider.toggleContactsEnabled(!value);
+                          },
+                  ),
+                  SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.sensors, size: 20),
+                    title: Text(l10n.enableSensorsTab),
+                    value: appProvider.isSensorsEnabled,
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (value) async {
+                            await appProvider.toggleSensorsEnabled(value);
+                          },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
+                    child: Text(
+                      'Contacts tab sections',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.star_outline_rounded,
+                    label: l10n.favourites,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.favourites,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.favourites,
+                            v,
+                          ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.people_alt_outlined,
+                    label: l10n.teamMembers,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.teamMembers,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.teamMembers,
+                            v,
+                          ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.router_outlined,
+                    label: l10n.repeaters,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.repeaters,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.repeaters,
+                            v,
+                          ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.sensors_outlined,
+                    label: l10n.sensors,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.sensors,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.sensors,
+                            v,
+                          ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.meeting_room_outlined,
+                    label: l10n.rooms,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.rooms,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.rooms,
+                            v,
+                          ),
+                  ),
+                  _buildCompactToggleRow(
+                    icon: Icons.broadcast_on_personal_outlined,
+                    label: l10n.channels,
+                    value: appProvider.isContactsSectionEnabled(
+                      ContactsTabSection.channels,
+                    ),
+                    onChanged: appProvider.isSimpleMode
+                        ? null
+                        : (v) => appProvider.setContactsSectionEnabled(
+                            ContactsTabSection.channels,
+                            v,
+                          ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Messaging ──
+            _buildSection(
+              icon: Icons.chat_rounded,
+              title: AppLocalizations.of(context)!.messaging,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.routingRetriesAndDestinationLock,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.alt_route, size: 20),
+                  title: Text(l10n.routePathByteSize),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$_routeHashSize byte${_routeHashSize == 1 ? '' : 's'}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: _showRouteHashSizeDialog,
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.route, size: 20),
+                    title: Text(l10n.nearestRepeaterFallback),
+                    subtitle: Text(
+                      AppLocalizations.of(
+                        context,
+                      )!.resendThroughNearestRepeaterOnFailure,
+                    ),
+                    value: appProvider.nearestRelayFallbackEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleNearestRelayFallbackEnabled(
+                        value,
+                      );
                     },
                   ),
                 ),
-              ),
-            ),
-          ]),
-          const SizedBox(height: 12),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.cleaning_services, size: 20),
+                    title: Text(l10n.clearPathOnMaxRetry),
+                    subtitle: Text(
+                      AppLocalizations.of(
+                        context,
+                      )!.clearRouteOnlyAfterAllRetriesFail,
+                    ),
+                    value: appProvider.clearPathOnMaxRetry,
+                    onChanged: (value) async {
+                      await appProvider.toggleClearPathOnMaxRetry(value);
+                    },
+                  ),
+                ),
+                const Divider(height: 1),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.lock_outline, size: 20),
+                  title: Text(AppLocalizations.of(context)!.lockDestination),
+                  subtitle: const Text(
+                    'Fix Messages tab to one channel or room',
+                  ),
+                  value: _messageDestinationLockEnabled,
+                  onChanged: (value) async {
+                    final contactsProvider = context.read<ContactsProvider>();
+                    final options = _messageDestinationLockOptions(
+                      contactsProvider,
+                    );
+                    final selectedPublicKey =
+                        _selectedMessageDestinationLockValue(options) ??
+                        _publicChannelPublicKeyHex;
+                    final selectedContact = options.where((contact) {
+                      return contact.publicKeyHex == selectedPublicKey;
+                    }).firstOrNull;
 
-          // ── Notifications ──
-          _buildSection(
-            icon: Icons.notifications_outlined,
-            title: AppLocalizations.of(context)!.notifications,
-            subtitle: AppLocalizations.of(context)!.controlWhichAlertsYouReceive,
-            children: [
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.chat_bubble_outline, size: 20),
-              title: Text(l10n.messageNotifications),
-              value: _messageNotificationsEnabled,
-              onChanged: (value) async {
-                setState(() => _messageNotificationsEnabled = value);
-                await NotificationService().setMessageNotificationsEnabled(
-                  value,
-                );
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.warning_amber_outlined, size: 20),
-              title: Text(l10n.sarAlerts),
-              value: _sarNotificationsEnabled,
-              onChanged: (value) async {
-                setState(() => _sarNotificationsEnabled = value);
-                await NotificationService().setSarNotificationsEnabled(value);
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.contact_page_outlined, size: 20),
-              title: Text(l10n.discoveryNotifications),
-              value: _discoveryNotificationsEnabled,
-              onChanged: (value) async {
-                setState(() => _discoveryNotificationsEnabled = value);
-                await NotificationService().setDiscoveryNotificationsEnabled(
-                  value,
-                );
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.system_update, size: 20),
-              title: Text(l10n.updateNotifications),
-              value: _updateNotificationsEnabled,
-              onChanged: (value) async {
-                setState(() => _updateNotificationsEnabled = value);
-                await NotificationService().setUpdateNotificationsEnabled(
-                  value,
-                );
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.visibility_off_outlined, size: 20),
-              title: Text(l10n.muteWhileAppIsOpen),
-              subtitle: Text(AppLocalizations.of(context)!.suppressNotificationsWhileInForeground),
-              value: _muteForegroundNotifications,
-              onChanged: (value) async {
-                setState(() => _muteForegroundNotifications = value);
-                await NotificationService().setMuteForegroundNotifications(
-                  value,
-                );
-              },
-            ),
-          ]),
-          const SizedBox(height: 12),
+                    await _setMessageDestinationLock(
+                      enabled: value,
+                      type: selectedContact == null
+                          ? MessageDestinationPreferences.destinationTypeChannel
+                          : _messageDestinationLockTypeForContact(
+                              selectedContact,
+                            ),
+                      recipientPublicKey: selectedPublicKey,
+                    );
+                  },
+                ),
+                if (_messageDestinationLockEnabled)
+                  Consumer<ContactsProvider>(
+                    builder: (context, contactsProvider, child) {
+                      final options = _messageDestinationLockOptions(
+                        contactsProvider,
+                      );
+                      final selectedValue =
+                          _selectedMessageDestinationLockValue(options);
 
-          // ── Tabs & Navigation ──
-          Consumer<AppProvider>(
-            builder: (context, appProvider, child) => _buildSection(
-              icon: Icons.dashboard_customize_rounded,
-              title: AppLocalizations.of(context)!.tabsAndNavigation,
-              subtitle: AppLocalizations.of(context)!.chooseWhichTabsAndContactSectionsToShow,
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                        child: DropdownButtonFormField<String>(
+                          key: ValueKey(selectedValue),
+                          initialValue: selectedValue,
+                          isExpanded: true,
+                          decoration: const InputDecoration(
+                            labelText: 'Locked channel or room',
+                            prefixIcon: Icon(Icons.forum_outlined),
+                            border: OutlineInputBorder(),
+                            isDense: true,
+                          ),
+                          items: [
+                            for (final contact in options)
+                              DropdownMenuItem<String>(
+                                value: contact.publicKeyHex,
+                                child: Text(
+                                  _messageDestinationLockLabel(
+                                    context,
+                                    contact,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                          ],
+                          onChanged: options.isNotEmpty
+                              ? (value) async {
+                                  if (value == null) return;
+                                  final selectedContact = options.where((
+                                    contact,
+                                  ) {
+                                    return contact.publicKeyHex == value;
+                                  }).firstOrNull;
+                                  if (selectedContact == null) return;
+
+                                  await _setMessageDestinationLock(
+                                    enabled: true,
+                                    type: _messageDestinationLockTypeForContact(
+                                      selectedContact,
+                                    ),
+                                    recipientPublicKey: value,
+                                  );
+                                }
+                              : null,
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Map ──
+            _buildSection(
+              icon: Icons.map_rounded,
+              title: AppLocalizations.of(context)!.map,
               children: [
-              SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.map_outlined, size: 20),
-                title: Text(l10n.disableMap),
-                value: !appProvider.isMapEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleMapEnabled(!value);
-                },
-              ),
-              SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.contacts_outlined, size: 20),
-                title: Text(l10n.disableContacts),
-                value: !appProvider.isContactsEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleContactsEnabled(!value);
-                },
-              ),
-              SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.sensors, size: 20),
-                title: Text(l10n.enableSensorsTab),
-                value: appProvider.isSensorsEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleSensorsEnabled(value);
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(4, 8, 4, 4),
-                child: Text(
-                  'Contacts tab sections',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.explore, size: 20),
+                  title: Text(l10n.rotateMapWithHeading),
+                  value: _rotateMapWithHeading,
+                  onChanged: (value) async {
+                    setState(() => _rotateMapWithHeading = value);
+                    await _saveMapPreference('map_rotate_with_heading', value);
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.fullscreen, size: 20),
+                  title: Text(l10n.openMapInFullscreen),
+                  value: _openMapInFullscreen,
+                  onChanged: (value) async {
+                    setState(() => _openMapInFullscreen = value);
+                    await _saveMapPreference('map_fullscreen', value);
+                  },
+                ),
+                Consumer<DrawingProvider>(
+                  builder: (context, drawingProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.fmd_good_outlined, size: 20),
+                    title: Text(l10n.showSarMarkersLabel),
+                    value: drawingProvider.showSarMarkers,
+                    onChanged: (value) {
+                      drawingProvider.toggleSarMarkers();
+                    },
                   ),
                 ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.star_outline_rounded,
-                label: l10n.favourites,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.favourites,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.favourites,
-                  v,
-                ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.people_alt_outlined,
-                label: l10n.teamMembers,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.teamMembers,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.teamMembers,
-                  v,
-                ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.router_outlined,
-                label: l10n.repeaters,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.repeaters,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.repeaters,
-                  v,
-                ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.sensors_outlined,
-                label: l10n.sensors,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.sensors,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.sensors,
-                  v,
-                ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.meeting_room_outlined,
-                label: l10n.rooms,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.rooms,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.rooms,
-                  v,
-                ),
-              ),
-              _buildCompactToggleRow(
-                icon: Icons.broadcast_on_personal_outlined,
-                label: l10n.channels,
-                value: appProvider.isContactsSectionEnabled(
-                  ContactsTabSection.channels,
-                ),
-                onChanged: (v) => appProvider.setContactsSectionEnabled(
-                  ContactsTabSection.channels,
-                  v,
-                ),
-              ),
-            ]),
-          ),
-          const SizedBox(height: 12),
-
-          // ── Messaging ──
-          _buildSection(
-            icon: Icons.chat_rounded,
-            title: AppLocalizations.of(context)!.messaging,
-            subtitle: AppLocalizations.of(context)!.routingRetriesAndDestinationLock,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.alt_route, size: 20),
-              title: Text(l10n.routePathByteSize),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$_routeHashSize byte${_routeHashSize == 1 ? '' : 's'}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                Consumer<MapProvider>(
+                  builder: (context, mapProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.router_outlined, size: 20),
+                    title: Text(l10n.hideRepeatersOnMap),
+                    value: mapProvider.hideRepeatersOnMap,
+                    onChanged: (value) async {
+                      await mapProvider.setHideRepeatersOnMap(value);
+                    },
                   ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: _showRouteHashSizeDialog,
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.bug_report_outlined, size: 20),
+                  title: Text(l10n.showMapDebugInfo),
+                  value: _showMapDebugInfo,
+                  onChanged: (value) async {
+                    setState(() => _showMapDebugInfo = value);
+                    await _saveMapPreference('map_show_debug_info', value);
+                  },
+                ),
+              ],
             ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.route, size: 20),
-                title: Text(l10n.nearestRepeaterFallback),
-                subtitle: Text(AppLocalizations.of(context)!.resendThroughNearestRepeaterOnFailure),
-                value: appProvider.nearestRelayFallbackEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleNearestRelayFallbackEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.cleaning_services, size: 20),
-                title: Text(l10n.clearPathOnMaxRetry),
-                subtitle: Text(AppLocalizations.of(context)!.clearRouteOnlyAfterAllRetriesFail),
-                value: appProvider.clearPathOnMaxRetry,
-                onChanged: (value) async {
-                  await appProvider.toggleClearPathOnMaxRetry(value);
-                },
-              ),
-            ),
-            const Divider(height: 1),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.lock_outline, size: 20),
-              title: Text(AppLocalizations.of(context)!.lockDestination),
-              subtitle: const Text(
-                'Fix Messages tab to one channel or room',
-              ),
-              value: _messageDestinationLockEnabled,
-              onChanged: (value) async {
-                final contactsProvider = context.read<ContactsProvider>();
-                final options = _messageDestinationLockOptions(
-                  contactsProvider,
-                );
-                final selectedPublicKey =
-                    _selectedMessageDestinationLockValue(options) ??
-                    _publicChannelPublicKeyHex;
-                final selectedContact = options.where((contact) {
-                  return contact.publicKeyHex == selectedPublicKey;
-                }).firstOrNull;
+            const SizedBox(height: 12),
 
-                await _setMessageDestinationLock(
-                  enabled: value,
-                  type: selectedContact == null
-                      ? MessageDestinationPreferences.destinationTypeChannel
-                      : _messageDestinationLockTypeForContact(selectedContact),
-                  recipientPublicKey: selectedPublicKey,
-                );
-              },
-            ),
-            if (_messageDestinationLockEnabled)
-              Consumer<ContactsProvider>(
-                builder: (context, contactsProvider, child) {
-                  final options = _messageDestinationLockOptions(
-                    contactsProvider,
-                  );
-                  final selectedValue =
-                      _selectedMessageDestinationLockValue(options);
-
-                  return Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                    child: DropdownButtonFormField<String>(
-                      key: ValueKey(selectedValue),
-                      initialValue: selectedValue,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        labelText: 'Locked channel or room',
-                        prefixIcon: Icon(Icons.forum_outlined),
-                        border: OutlineInputBorder(),
-                        isDense: true,
+            // ── GPS & Location ──
+            _buildSection(
+              icon: Icons.gps_fixed,
+              title: AppLocalizations.of(context)!.gpsAndLocation,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.fastUpdatesThresholdsAndPermissions,
+              children: [
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.gps_fixed, size: 20),
+                  title: Text(l10n.fastPrivateGpsUpdates),
+                  subtitle: const Text(
+                    'Zero-hop updates while moving or actively using app',
+                  ),
+                  value: _fastLocationUpdatesEnabled,
+                  onChanged: _setFastLocationUpdatesEnabled,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.straighten, size: 20),
+                  title: Text(l10n.movementThreshold),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${_fastLocationMovementThresholdMeters.toStringAsFixed(0)} m',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
-                      items: [
-                        for (final contact in options)
-                          DropdownMenuItem<String>(
-                            value: contact.publicKeyHex,
-                            child: Text(
-                              _messageDestinationLockLabel(context, contact),
-                              overflow: TextOverflow.ellipsis,
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: _editFastLocationMovementThreshold,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.timer, size: 20),
+                  title: Text(l10n.activeuseUpdateInterval),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '${_fastLocationActiveCadenceSeconds}s',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: _editFastLocationActiveCadence,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.forum, size: 20),
+                  title: Text(
+                    AppLocalizations.of(context)!.fastGpsTargetChannel,
+                  ),
+                  subtitle: Text(
+                    _describeFastLocationChannel(
+                      context.watch<ContactsProvider>().channels,
+                    ),
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _editFastLocationChannel,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.send, size: 20),
+                  title: Text(AppLocalizations.of(context)!.testSendUpdate),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: _sendTestFastLocationUpdate,
+                ),
+                const Divider(height: 1),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.location_on, size: 20),
+                  title: Text(l10n.locationPermission),
+                  subtitle: FutureBuilder<LocationPermission>(
+                    future: Geolocator.checkPermission(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return Text(l10n.checking);
+                      }
+                      final permission = snapshot.data!;
+                      String statusText;
+                      Color statusColor;
+
+                      switch (permission) {
+                        case LocationPermission.always:
+                          statusText = l10n.locationPermissionGrantedAlways;
+                          statusColor = Colors.green;
+                          break;
+                        case LocationPermission.whileInUse:
+                          statusText = l10n.locationPermissionGrantedWhileInUse;
+                          statusColor = Colors.green;
+                          break;
+                        case LocationPermission.denied:
+                          statusText =
+                              l10n.locationPermissionDeniedTapToRequest;
+                          statusColor = Colors.orange;
+                          break;
+                        case LocationPermission.deniedForever:
+                          statusText = l10n
+                              .locationPermissionPermanentlyDeniedOpenSettings;
+                          statusColor = Colors.red;
+                          break;
+                        default:
+                          statusText = l10n.unknown;
+                          statusColor = Colors.grey;
+                      }
+
+                      return Text(
+                        statusText,
+                        style: TextStyle(color: statusColor),
+                      );
+                    },
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _handleLocationPermissionTap(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Voice ──
+            Consumer2<AppProvider, ConnectionProvider>(
+              builder: (context, appProvider, connectionProvider, child) =>
+                  _buildVoiceStatsCard(
+                    bitrate: _voiceBitrate,
+                    connectionProvider: connectionProvider,
+                    bandPassEnabled: appProvider.isVoiceBandPassFilterEnabled,
+                    compressorEnabled: appProvider.isVoiceCompressorEnabled,
+                    limiterEnabled: appProvider.isVoiceLimiterEnabled,
+                    autoGainEnabled: appProvider.isVoiceAutoGainEnabled,
+                    echoCancellationEnabled:
+                        appProvider.isVoiceEchoCancellationEnabled,
+                    noiseSuppressionEnabled:
+                        appProvider.isVoiceNoiseSuppressionEnabled,
+                    silenceTrimEnabled:
+                        appProvider.isVoiceSilenceTrimmingEnabled,
+                  ),
+            ),
+            _buildSection(
+              icon: Icons.mic_rounded,
+              title: AppLocalizations.of(context)!.voice,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.codecBitrateAndAudioProcessing,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.graphic_eq, size: 20),
+                  title: Text(l10n.voiceBitrate),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _voiceBitrateSubtitle(_voiceBitrate),
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: _showVoiceBitrateDialog,
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.tune, size: 20),
+                    title: Text(l10n.bandpassFilterVoice),
+                    value: appProvider.isVoiceBandPassFilterEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceBandPassFilterEnabled(value);
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.compress, size: 20),
+                    title: Text(l10n.voiceCompressor),
+                    value: appProvider.isVoiceCompressorEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceCompressorEnabled(value);
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.speed, size: 20),
+                    title: Text(l10n.voiceLimiter),
+                    value: appProvider.isVoiceLimiterEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceLimiterEnabled(value);
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.auto_fix_high, size: 20),
+                    title: Text(l10n.micAutoGain),
+                    value: appProvider.isVoiceAutoGainEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceAutoGainEnabled(value);
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.hearing_disabled, size: 20),
+                    title: Text(l10n.echoCancellation),
+                    value: appProvider.isVoiceEchoCancellationEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceEchoCancellationEnabled(
+                        value,
+                      );
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.noise_control_off, size: 20),
+                    title: Text(l10n.noiseSuppression),
+                    value: appProvider.isVoiceNoiseSuppressionEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceNoiseSuppressionEnabled(
+                        value,
+                      );
+                    },
+                  ),
+                ),
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => SwitchListTile(
+                    dense: true,
+                    secondary: const Icon(Icons.content_cut, size: 20),
+                    title: Text(l10n.trimSilenceInVoiceMessages),
+                    value: appProvider.isVoiceSilenceTrimmingEnabled,
+                    onChanged: (value) async {
+                      await appProvider.toggleVoiceSilenceTrimmingEnabled(
+                        value,
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Images ──
+            _buildSection(
+              icon: Icons.image_rounded,
+              title: AppLocalizations.of(context)!.images,
+              subtitle: AppLocalizations.of(context)!.sizeCompressionAndPreview,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.photo_size_select_large, size: 20),
+                  title: Text(l10n.maxImageSize),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$_imageMaxSize×$_imageMaxSize px',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Icon(Icons.chevron_right),
+                    ],
+                  ),
+                  onTap: _showImageMaxSizeDialog,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.tune, size: 20),
+                  title: Text(l10n.imageCompression),
+                  subtitle: Slider(
+                    value: _imageCompression.toDouble(),
+                    min: 10,
+                    max: 90,
+                    divisions: 8,
+                    label: '$_imageCompression',
+                    onChanged: (v) =>
+                        setState(() => _imageCompression = v.round()),
+                    onChangeEnd: (v) => _saveImageCompression(v.round()),
+                  ),
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.invert_colors, size: 20),
+                  title: Text(l10n.grayscale),
+                  subtitle: Text(AppLocalizations.of(context)!.smallerFileSize),
+                  value: _imageGrayscale,
+                  onChanged: (value) async {
+                    await ImagePreferences.setGrayscale(value);
+                    setState(() => _imageGrayscale = value);
+                    await _refreshImageModePreview();
+                  },
+                ),
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.compress, size: 20),
+                  title: Text(l10n.ultraMode),
+                  subtitle: Text(
+                    AppLocalizations.of(
+                      context,
+                    )!.extraAggressiveAvifCompression,
+                  ),
+                  value: _imageUltraMode,
+                  onChanged: (value) async {
+                    await ImagePreferences.setUltraMode(value);
+                    setState(() => _imageUltraMode = value);
+                    await _refreshImageModePreview();
+                  },
+                ),
+              ],
+            ),
+            Consumer<ConnectionProvider>(
+              builder: (context, connectionProvider, child) =>
+                  _buildImageModePreviewCard(connectionProvider),
+            ),
+            const SizedBox(height: 12),
+
+            // ── Profiles ──
+            _buildSection(
+              icon: Icons.layers_outlined,
+              title: AppLocalizations.of(context)!.profiles,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.multiDeviceWorkspaceManagement,
+              children: [
+                SwitchListTile(
+                  dense: true,
+                  secondary: const Icon(Icons.layers_outlined, size: 20),
+                  title: Text(l10n.enableProfiles),
+                  value: _profilesEnabled,
+                  onChanged: (value) async {
+                    await context
+                        .read<ProfileWorkspaceCoordinator>()
+                        .setProfilesEnabled(value);
+                    if (!mounted) return;
+                    setState(() => _profilesEnabled = value);
+                  },
+                ),
+                if (_profilesEnabled)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.folder_copy_outlined, size: 20),
+                    title: Text(l10n.manageProfiles),
+                    subtitle: Text(
+                      context.watch<ProfileManager>().activeProfileId ==
+                              ConfigProfile.defaultProfileId
+                          ? 'Default is active'
+                          : 'Custom profile active',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const ProfilesScreen(),
+                        ),
+                      );
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Help ──
+            _buildSection(
+              icon: Icons.help_outline_rounded,
+              title: AppLocalizations.of(context)!.help,
+              subtitle: AppLocalizations.of(context)!.templatesAndTutorials,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.location_searching, size: 20),
+                  title: Text(l10n.sarTemplates),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            const SarTemplateManagementScreen(),
+                      ),
+                    );
+                  },
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.school, size: 20),
+                  title: Text(l10n.viewWelcomeTutorial),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WelcomeWizardScreen(
+                          onCompleted: () {
+                            Navigator.of(context).pop();
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── About ──
+            _buildSection(
+              icon: Icons.info_outline_rounded,
+              title: l10n.about,
+              children: [
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.info_outline, size: 20),
+                  title: Text(l10n.appVersion),
+                  subtitle: Text(
+                    _packageInfo != null
+                        ? '${_packageInfo!.version} (${_packageInfo!.buildNumber})'
+                        : 'Loading...',
+                  ),
+                  onTap: _handleVersionTap,
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.description_outlined, size: 20),
+                  title: Text(l10n.aboutMeshCoreSar),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => _showAboutDialog(),
+                ),
+                if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
+                  ListTile(
+                    dense: true,
+                    leading: _isCheckingForUpdates
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.system_update, size: 20),
+                    title: Text(
+                      _isCheckingForUpdates
+                          ? 'Checking...'
+                          : 'Check for Updates',
+                    ),
+                    onTap: _isCheckingForUpdates ? null : _checkForUpdates,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // ── Data & Developer ──
+            _buildSection(
+              icon: Icons.storage_rounded,
+              title: AppLocalizations.of(context)!.data,
+              subtitle: AppLocalizations.of(
+                context,
+              )!.trafficStatsMessageHistoryAndDeveloperTools,
+              children: [
+                Consumer<AppProvider>(
+                  builder: (context, appProvider, child) => ListenableBuilder(
+                    listenable: appProvider.trafficStatsReportingService,
+                    builder: (context, child) => TrafficStatsReportingSection(
+                      service: appProvider.trafficStatsReportingService,
+                    ),
+                  ),
+                ),
+                ListTile(
+                  dense: true,
+                  leading: const Icon(Icons.delete_sweep, size: 20),
+                  title: const Text(
+                    'Clear Messages',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                  subtitle: Text(l10n.deleteAllStoredMessageHistory),
+                  onTap: _clearMessages,
+                ),
+                if (_isDeveloperModeEnabled) ...[
+                  const Divider(height: 1),
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.bug_report, size: 20),
+                    title: Text(l10n.packageName),
+                    subtitle: Text(
+                      _packageInfo?.packageName ?? 'com.meshcore.sar',
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+                    child: Text(
+                      l10n.sampleData,
+                      style: Theme.of(context).textTheme.labelMedium,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+                    child: Text(
+                      l10n.sampleDataDescription,
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            onPressed: _isLoadingSampleData
+                                ? null
+                                : _loadSampleData,
+                            icon: _isLoadingSampleData
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.add_circle_outline),
+                            label: Text(l10n.loadSampleData),
+                            style: ElevatedButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(vertical: 10),
                             ),
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _isLoadingSampleData
+                                ? null
+                                : _clearSampleData,
+                            icon: const Icon(Icons.delete_outline),
+                            label: Text(l10n.clearAllData),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: Colors.red,
+                              padding: const EdgeInsets.symmetric(vertical: 10),
+                            ),
+                          ),
+                        ),
                       ],
-                      onChanged: options.isNotEmpty
-                          ? (value) async {
-                              if (value == null) return;
-                              final selectedContact =
-                                  options.where((contact) {
-                                return contact.publicKeyHex == value;
-                              }).firstOrNull;
-                              if (selectedContact == null) return;
-
-                              await _setMessageDestinationLock(
-                                enabled: true,
-                                type: _messageDestinationLockTypeForContact(
-                                  selectedContact,
-                                ),
-                                recipientPublicKey: value,
-                              );
-                            }
-                          : null,
                     ),
-                  );
-                },
-              ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── Map ──
-          _buildSection(
-            icon: Icons.map_rounded,
-            title: AppLocalizations.of(context)!.map,
-            children: [
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.explore, size: 20),
-              title: Text(l10n.rotateMapWithHeading),
-              value: _rotateMapWithHeading,
-              onChanged: (value) async {
-                setState(() => _rotateMapWithHeading = value);
-                await _saveMapPreference('map_rotate_with_heading', value);
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.fullscreen, size: 20),
-              title: Text(l10n.openMapInFullscreen),
-              value: _openMapInFullscreen,
-              onChanged: (value) async {
-                setState(() => _openMapInFullscreen = value);
-                await _saveMapPreference('map_fullscreen', value);
-              },
-            ),
-            Consumer<DrawingProvider>(
-              builder: (context, drawingProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.fmd_good_outlined, size: 20),
-                title: Text(l10n.showSarMarkersLabel),
-                value: drawingProvider.showSarMarkers,
-                onChanged: (value) {
-                  drawingProvider.toggleSarMarkers();
-                },
-              ),
-            ),
-            Consumer<MapProvider>(
-              builder: (context, mapProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.router_outlined, size: 20),
-                title: Text(l10n.hideRepeatersOnMap),
-                value: mapProvider.hideRepeatersOnMap,
-                onChanged: (value) async {
-                  await mapProvider.setHideRepeatersOnMap(value);
-                },
-              ),
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.bug_report_outlined, size: 20),
-              title: Text(l10n.showMapDebugInfo),
-              value: _showMapDebugInfo,
-              onChanged: (value) async {
-                setState(() => _showMapDebugInfo = value);
-                await _saveMapPreference('map_show_debug_info', value);
-              },
-            ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── GPS & Location ──
-          _buildSection(
-            icon: Icons.gps_fixed,
-            title: AppLocalizations.of(context)!.gpsAndLocation,
-            subtitle: AppLocalizations.of(context)!.fastUpdatesThresholdsAndPermissions,
-            children: [
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.gps_fixed, size: 20),
-              title: Text(l10n.fastPrivateGpsUpdates),
-              subtitle: const Text(
-                'Zero-hop updates while moving or actively using app',
-              ),
-              value: _fastLocationUpdatesEnabled,
-              onChanged: _setFastLocationUpdatesEnabled,
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.straighten, size: 20),
-              title: Text(l10n.movementThreshold),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${_fastLocationMovementThresholdMeters.toStringAsFixed(0)} m',
-                    style: Theme.of(context).textTheme.bodySmall,
                   ),
-                  const Icon(Icons.chevron_right),
                 ],
-              ),
-              onTap: _editFastLocationMovementThreshold,
+              ],
             ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.timer, size: 20),
-              title: Text(l10n.activeuseUpdateInterval),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '${_fastLocationActiveCadenceSeconds}s',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: _editFastLocationActiveCadence,
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.forum, size: 20),
-              title: Text(AppLocalizations.of(context)!.fastGpsTargetChannel),
-              subtitle: Text(
-                _describeFastLocationChannel(
-                  context.watch<ContactsProvider>().channels,
-                ),
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _editFastLocationChannel,
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.send, size: 20),
-              title: Text(AppLocalizations.of(context)!.testSendUpdate),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _sendTestFastLocationUpdate,
-            ),
-            const Divider(height: 1),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.location_on, size: 20),
-              title: Text(l10n.locationPermission),
-              subtitle: FutureBuilder<LocationPermission>(
-                future: Geolocator.checkPermission(),
-                builder: (context, snapshot) {
-                  if (!snapshot.hasData) {
-                    return Text(l10n.checking);
-                  }
-                  final permission = snapshot.data!;
-                  String statusText;
-                  Color statusColor;
-
-                  switch (permission) {
-                    case LocationPermission.always:
-                      statusText = l10n.locationPermissionGrantedAlways;
-                      statusColor = Colors.green;
-                      break;
-                    case LocationPermission.whileInUse:
-                      statusText = l10n.locationPermissionGrantedWhileInUse;
-                      statusColor = Colors.green;
-                      break;
-                    case LocationPermission.denied:
-                      statusText = l10n.locationPermissionDeniedTapToRequest;
-                      statusColor = Colors.orange;
-                      break;
-                    case LocationPermission.deniedForever:
-                      statusText =
-                          l10n.locationPermissionPermanentlyDeniedOpenSettings;
-                      statusColor = Colors.red;
-                      break;
-                    default:
-                      statusText = l10n.unknown;
-                      statusColor = Colors.grey;
-                  }
-
-                  return Text(statusText, style: TextStyle(color: statusColor));
-                },
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _handleLocationPermissionTap(),
-            ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── Voice ──
-          Consumer2<AppProvider, ConnectionProvider>(
-            builder: (context, appProvider, connectionProvider, child) =>
-                _buildVoiceStatsCard(
-                  bitrate: _voiceBitrate,
-                  connectionProvider: connectionProvider,
-                  bandPassEnabled: appProvider.isVoiceBandPassFilterEnabled,
-                  compressorEnabled: appProvider.isVoiceCompressorEnabled,
-                  limiterEnabled: appProvider.isVoiceLimiterEnabled,
-                  autoGainEnabled: appProvider.isVoiceAutoGainEnabled,
-                  echoCancellationEnabled:
-                      appProvider.isVoiceEchoCancellationEnabled,
-                  noiseSuppressionEnabled:
-                      appProvider.isVoiceNoiseSuppressionEnabled,
-                  silenceTrimEnabled: appProvider.isVoiceSilenceTrimmingEnabled,
-                ),
-          ),
-          _buildSection(
-            icon: Icons.mic_rounded,
-            title: AppLocalizations.of(context)!.voice,
-            subtitle: AppLocalizations.of(context)!.codecBitrateAndAudioProcessing,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.graphic_eq, size: 20),
-              title: Text(l10n.voiceBitrate),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _voiceBitrateSubtitle(_voiceBitrate),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: _showVoiceBitrateDialog,
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.tune, size: 20),
-                title: Text(l10n.bandpassFilterVoice),
-                value: appProvider.isVoiceBandPassFilterEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceBandPassFilterEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.compress, size: 20),
-                title: Text(l10n.voiceCompressor),
-                value: appProvider.isVoiceCompressorEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceCompressorEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.speed, size: 20),
-                title: Text(l10n.voiceLimiter),
-                value: appProvider.isVoiceLimiterEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceLimiterEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.auto_fix_high, size: 20),
-                title: Text(l10n.micAutoGain),
-                value: appProvider.isVoiceAutoGainEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceAutoGainEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.hearing_disabled, size: 20),
-                title: Text(l10n.echoCancellation),
-                value: appProvider.isVoiceEchoCancellationEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceEchoCancellationEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.noise_control_off, size: 20),
-                title: Text(l10n.noiseSuppression),
-                value: appProvider.isVoiceNoiseSuppressionEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceNoiseSuppressionEnabled(value);
-                },
-              ),
-            ),
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => SwitchListTile(
-                dense: true,
-                secondary: const Icon(Icons.content_cut, size: 20),
-                title: Text(l10n.trimSilenceInVoiceMessages),
-                value: appProvider.isVoiceSilenceTrimmingEnabled,
-                onChanged: (value) async {
-                  await appProvider.toggleVoiceSilenceTrimmingEnabled(value);
-                },
-              ),
-            ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── Images ──
-          _buildSection(
-            icon: Icons.image_rounded,
-            title: AppLocalizations.of(context)!.images,
-            subtitle: AppLocalizations.of(context)!.sizeCompressionAndPreview,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.photo_size_select_large, size: 20),
-              title: Text(l10n.maxImageSize),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$_imageMaxSize×$_imageMaxSize px',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const Icon(Icons.chevron_right),
-                ],
-              ),
-              onTap: _showImageMaxSizeDialog,
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.tune, size: 20),
-              title: Text(l10n.imageCompression),
-              subtitle: Slider(
-                value: _imageCompression.toDouble(),
-                min: 10,
-                max: 90,
-                divisions: 8,
-                label: '$_imageCompression',
-                onChanged: (v) => setState(() => _imageCompression = v.round()),
-                onChangeEnd: (v) => _saveImageCompression(v.round()),
-              ),
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.invert_colors, size: 20),
-              title: Text(l10n.grayscale),
-              subtitle: Text(AppLocalizations.of(context)!.smallerFileSize),
-              value: _imageGrayscale,
-              onChanged: (value) async {
-                await ImagePreferences.setGrayscale(value);
-                setState(() => _imageGrayscale = value);
-                await _refreshImageModePreview();
-              },
-            ),
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.compress, size: 20),
-              title: Text(l10n.ultraMode),
-              subtitle: Text(AppLocalizations.of(context)!.extraAggressiveAvifCompression),
-              value: _imageUltraMode,
-              onChanged: (value) async {
-                await ImagePreferences.setUltraMode(value);
-                setState(() => _imageUltraMode = value);
-                await _refreshImageModePreview();
-              },
-            ),
-          ]),
-          Consumer<ConnectionProvider>(
-            builder: (context, connectionProvider, child) =>
-                _buildImageModePreviewCard(connectionProvider),
-          ),
-          const SizedBox(height: 12),
-
-          // ── Profiles ──
-          _buildSection(
-            icon: Icons.layers_outlined,
-            title: AppLocalizations.of(context)!.profiles,
-            subtitle: AppLocalizations.of(context)!.multiDeviceWorkspaceManagement,
-            children: [
-            SwitchListTile(
-              dense: true,
-              secondary: const Icon(Icons.layers_outlined, size: 20),
-              title: Text(l10n.enableProfiles),
-              value: _profilesEnabled,
-              onChanged: (value) async {
-                await context
-                    .read<ProfileWorkspaceCoordinator>()
-                    .setProfilesEnabled(value);
-                if (!mounted) return;
-                setState(() => _profilesEnabled = value);
-              },
-            ),
-            if (_profilesEnabled)
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.folder_copy_outlined, size: 20),
-                title: Text(l10n.manageProfiles),
-                subtitle: Text(
-                  context.watch<ProfileManager>().activeProfileId ==
-                          ConfigProfile.defaultProfileId
-                      ? 'Default is active'
-                      : 'Custom profile active',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const ProfilesScreen(),
-                    ),
-                  );
-                },
-              ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── Help ──
-          _buildSection(
-            icon: Icons.help_outline_rounded,
-            title: AppLocalizations.of(context)!.help,
-            subtitle: AppLocalizations.of(context)!.templatesAndTutorials,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.location_searching, size: 20),
-              title: Text(l10n.sarTemplates),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const SarTemplateManagementScreen(),
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.school, size: 20),
-              title: Text(l10n.viewWelcomeTutorial),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => WelcomeWizardScreen(
-                      onCompleted: () {
-                        Navigator.of(context).pop();
-                      },
-                    ),
-                  ),
-                );
-              },
-            ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── About ──
-          _buildSection(
-            icon: Icons.info_outline_rounded,
-            title: l10n.about,
-            children: [
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.info_outline, size: 20),
-              title: Text(l10n.appVersion),
-              subtitle: Text(
-                _packageInfo != null
-                    ? '${_packageInfo!.version} (${_packageInfo!.buildNumber})'
-                    : 'Loading...',
-              ),
-              onTap: _handleVersionTap,
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.description_outlined, size: 20),
-              title: Text(l10n.aboutMeshCoreSar),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showAboutDialog(),
-            ),
-            if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android)
-              ListTile(
-                dense: true,
-                leading: _isCheckingForUpdates
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.system_update, size: 20),
-                title: Text(
-                  _isCheckingForUpdates ? 'Checking...' : 'Check for Updates',
-                ),
-                onTap: _isCheckingForUpdates ? null : _checkForUpdates,
-              ),
-          ]),
-          const SizedBox(height: 12),
-
-          // ── Data & Developer ──
-          _buildSection(
-            icon: Icons.storage_rounded,
-            title: AppLocalizations.of(context)!.data,
-            subtitle: AppLocalizations.of(context)!.trafficStatsMessageHistoryAndDeveloperTools,
-            children: [
-            Consumer<AppProvider>(
-              builder: (context, appProvider, child) => ListenableBuilder(
-                listenable: appProvider.trafficStatsReportingService,
-                builder: (context, child) => TrafficStatsReportingSection(
-                  service: appProvider.trafficStatsReportingService,
-                ),
-              ),
-            ),
-            ListTile(
-              dense: true,
-              leading: const Icon(Icons.delete_sweep, size: 20),
-              title: const Text(
-                'Clear Messages',
-                style: TextStyle(color: Colors.red),
-              ),
-              subtitle: Text(l10n.deleteAllStoredMessageHistory),
-              onTap: _clearMessages,
-            ),
-            if (_isDeveloperModeEnabled) ...[
-              const Divider(height: 1),
-              ListTile(
-                dense: true,
-                leading: const Icon(Icons.bug_report, size: 20),
-                title: Text(l10n.packageName),
-                subtitle: Text(
-                  _packageInfo?.packageName ?? 'com.meshcore.sar',
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-                child: Text(
-                  l10n.sampleData,
-                  style: Theme.of(context).textTheme.labelMedium,
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: Text(
-                  l10n.sampleDataDescription,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed:
-                            _isLoadingSampleData ? null : _loadSampleData,
-                        icon: _isLoadingSampleData
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                ),
-                              )
-                            : const Icon(Icons.add_circle_outline),
-                        label: Text(l10n.loadSampleData),
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed:
-                            _isLoadingSampleData ? null : _clearSampleData,
-                        icon: const Icon(Icons.delete_outline),
-                        label: Text(l10n.clearAllData),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.red,
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ]),
-        ],
+          ],
         ),
       ),
     );
@@ -2183,7 +2321,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required IconData icon,
     required String label,
     required bool value,
-    required ValueChanged<bool> onChanged,
+    required ValueChanged<bool>? onChanged,
   }) {
     return SwitchListTile(
       dense: true,

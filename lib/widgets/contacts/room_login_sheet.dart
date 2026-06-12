@@ -21,7 +21,6 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
   final FocusNode _focusNode = FocusNode();
   bool _isLoggingIn = false;
   bool _obscurePassword = true;
-  bool _isDisposed = false; // Track disposal state for async callbacks
 
   @override
   void initState() {
@@ -31,7 +30,6 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
 
   @override
   void dispose() {
-    _isDisposed = true;
     _passwordController.dispose();
     _focusNode.dispose();
     super.dispose();
@@ -228,6 +226,15 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
     // Save password before sending
     await _savePassword(password);
 
+    if (!mounted) return;
+
+    // Capture references before the sheet pops: the login result arrives
+    // after Navigator.pop, when this State is disposed, so the callbacks
+    // below must not depend on this widget's context.
+    final messenger = ScaffoldMessenger.of(context);
+    final colorScheme = Theme.of(context).colorScheme;
+    final l10n = AppLocalizations.of(context)!;
+
     // Set up login callbacks
     Function(Uint8List, int, bool, int)? originalOnSuccess;
     Function(Uint8List)? originalOnFail;
@@ -251,12 +258,12 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
         '   Messages will be fetched when onMessageWaiting callback is triggered',
       );
 
-      // Check both _isDisposed flag and mounted to handle race conditions
-      if (_isDisposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Use the captured messenger: the sheet has already been popped by the
+      // time this callback fires, so this State's context is gone.
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.loggedInSuccessfully),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text(l10n.loggedInSuccessfully),
+          backgroundColor: colorScheme.primary,
           duration: const Duration(seconds: 3),
         ),
       );
@@ -269,12 +276,12 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
 
       debugPrint('❌ [RoomLogin] Login failed - incorrect password');
 
-      // Check both _isDisposed flag and mounted to handle race conditions
-      if (_isDisposed || !mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      // Use the captured messenger: the sheet has already been popped by the
+      // time this callback fires, so this State's context is gone.
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.loginFailed),
-          backgroundColor: Theme.of(context).colorScheme.error,
+          content: Text(l10n.loginFailed),
+          backgroundColor: colorScheme.error,
           duration: const Duration(seconds: 3),
         ),
       );
@@ -289,15 +296,14 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
 
       _focusNode.unfocus();
 
-      if (!mounted) return;
-      Navigator.pop(context); // Close the dialog
+      if (mounted) {
+        Navigator.pop(context); // Close the dialog
+      }
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.loggingIn(widget.contact.displayName),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.primary,
+          content: Text(l10n.loggingIn(widget.contact.displayName)),
+          backgroundColor: colorScheme.primary,
           duration: const Duration(seconds: 2),
         ),
       );
@@ -306,13 +312,10 @@ class _RoomLoginSheetState extends State<RoomLoginSheet> {
       connectionProvider.onLoginSuccess = originalOnSuccess;
       connectionProvider.onLoginFail = originalOnFail;
 
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
+      messenger.showSnackBar(
         SnackBar(
-          content: Text(
-            AppLocalizations.of(context)!.failedToSendLogin(e.toString()),
-          ),
-          backgroundColor: Theme.of(context).colorScheme.error,
+          content: Text(l10n.failedToSendLogin(e.toString())),
+          backgroundColor: colorScheme.error,
         ),
       );
     } finally {

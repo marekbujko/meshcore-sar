@@ -66,20 +66,27 @@ class DrawingToolbar extends StatelessWidget {
                     icon: const Icon(Icons.close, size: 20),
                     onPressed: () => drawingProvider.exitDrawingMode(),
                     padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
+                    constraints: const BoxConstraints(
+                      minWidth: 44,
+                      minHeight: 44,
+                    ),
                   ),
                 ],
               ),
               const SizedBox(height: 8),
               // Color picker - more compact
               Wrap(
-                spacing: 4,
-                runSpacing: 4,
+                spacing: 0,
+                runSpacing: 0,
                 children: DrawingColors.palette.map((color) {
                   final isSelected = drawingProvider.selectedColor == color;
+                  // Padding expands the touch target to 40x40 while keeping
+                  // the swatch visually compact (glove-friendly hit area)
                   return GestureDetector(
                     onTap: () => drawingProvider.setColor(color),
+                    behavior: HitTestBehavior.opaque,
                     child: Container(
+                      margin: const EdgeInsets.all(8),
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
@@ -124,8 +131,11 @@ class DrawingToolbar extends StatelessWidget {
                       onPressed: () => drawingProvider.cancelCurrentDrawing(),
                       tooltip: AppLocalizations.of(context)!.cancel,
                       iconSize: 20,
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                     ),
                   // Clear measurement
                   if (drawingProvider.drawingMode == DrawingMode.measure &&
@@ -136,8 +146,11 @@ class DrawingToolbar extends StatelessWidget {
                       tooltip: AppLocalizations.of(context)!.clearMeasurement,
                       color: Colors.orange,
                       iconSize: 20,
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                     ),
                   // Complete line drawing
                   if (drawingProvider.drawingMode == DrawingMode.line &&
@@ -148,8 +161,11 @@ class DrawingToolbar extends StatelessWidget {
                       tooltip: AppLocalizations.of(context)!.completeLine,
                       color: Colors.green,
                       iconSize: 20,
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                     ),
                   // Clear all drawings
                   if (drawingProvider.drawings.isNotEmpty)
@@ -160,8 +176,11 @@ class DrawingToolbar extends StatelessWidget {
                       tooltip: AppLocalizations.of(context)!.clearAll,
                       color: Colors.red,
                       iconSize: 20,
-                      padding: const EdgeInsets.all(4),
-                      constraints: const BoxConstraints(),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(
+                        minWidth: 44,
+                        minHeight: 44,
+                      ),
                     ),
                 ],
               ),
@@ -702,6 +721,7 @@ class DrawingToolbar extends StatelessWidget {
     );
     int successCount = 0;
     int alreadyShared = 0;
+    int failedCount = 0;
 
     for (final drawing in drawings) {
       // Skip if already shared
@@ -763,12 +783,26 @@ class DrawingToolbar extends StatelessWidget {
       } catch (e, stackTrace) {
         debugPrint('❌ Failed to share drawing ${drawing.id}: $e');
         debugPrint('  Stack trace: $stackTrace');
+        failedCount++;
       }
     }
 
     debugPrint(
       '  Share complete: $successCount/${drawings.length} sent, $alreadyShared already shared',
     );
+
+    if (!context.mounted) return;
+    if (failedCount > 0) {
+      ToastLogger.error(
+        context,
+        'Failed to share $failedCount drawing${failedCount == 1 ? '' : 's'}',
+      );
+    } else if (successCount > 0) {
+      ToastLogger.success(
+        context,
+        'Shared $successCount drawing${successCount == 1 ? '' : 's'}',
+      );
+    }
   }
 
   /// Share drawings to a specific room
@@ -800,6 +834,7 @@ class DrawingToolbar extends StatelessWidget {
     );
     int successCount = 0;
     int alreadyShared = 0;
+    int failedCount = 0;
 
     for (final drawing in drawings) {
       // Skip if already shared
@@ -864,12 +899,26 @@ class DrawingToolbar extends StatelessWidget {
           '❌ Failed to share drawing ${drawing.id} to ${room.advName}: $e',
         );
         debugPrint('  Stack trace: $stackTrace');
+        failedCount++;
       }
     }
 
     debugPrint(
       '  Share complete: $successCount/${drawings.length} sent, $alreadyShared already shared',
     );
+
+    if (!context.mounted) return;
+    if (failedCount > 0) {
+      ToastLogger.error(
+        context,
+        'Failed to share $failedCount drawing${failedCount == 1 ? '' : 's'}',
+      );
+    } else if (successCount > 0) {
+      ToastLogger.success(
+        context,
+        'Shared $successCount drawing${successCount == 1 ? '' : 's'}',
+      );
+    }
   }
 
   /// Show share dialog for a single drawing

@@ -163,6 +163,10 @@ class ConnectionProvider with ChangeNotifier {
   // Completer to wait for contacts sync to finish
   Completer<void>? _contactsSyncCompleter;
 
+  // True only when the device signaled end-of-contacts for the last sync
+  // (false on timeout or disconnect, i.e. a possibly partial list).
+  bool _contactsSyncEndedNormally = false;
+
   // Lightweight guards for other commands that can be double-tapped
   bool _isLoginInProgress = false;
   DateTime? _lastLoginRequestedAt;
@@ -444,6 +448,7 @@ class ConnectionProvider with ChangeNotifier {
     service.onContactsComplete = (contacts) {
       debugPrint('📥 [Provider] Contacts sync complete: ${contacts.length}');
       _isContactsSyncInProgress = false;
+      _contactsSyncEndedNormally = true;
       if (_contactsSyncCompleter != null &&
           !_contactsSyncCompleter!.isCompleted) {
         _contactsSyncCompleter!.complete();
@@ -992,15 +997,20 @@ class ConnectionProvider with ChangeNotifier {
   ///
   /// Waits for the device to finish sending all contacts (up to 5 s timeout)
   /// so callers don't need an arbitrary delay.
-  Future<void> getContacts() async {
+  ///
+  /// Returns true only when the device signaled end-of-contacts, i.e. the
+  /// received list is complete and can be treated as authoritative. Returns
+  /// false on timeout, disconnect, or error (possibly partial list).
+  Future<bool> getContacts() async {
     if (!_activeService.isConnected) {
       _error = 'Not connected to device';
       notifyListeners();
-      return;
+      return false;
     }
 
     try {
       _isContactsSyncInProgress = true;
+      _contactsSyncEndedNormally = false;
       _contactsSyncCompleter = Completer<void>();
       await _activeService.getContacts();
       await _contactsSyncCompleter!.future.timeout(
@@ -1011,10 +1021,12 @@ class ConnectionProvider with ChangeNotifier {
           );
         },
       );
+      return _contactsSyncEndedNormally;
     } catch (e) {
       _isContactsSyncInProgress = false;
       _error = 'Failed to get contacts: $e';
       notifyListeners();
+      return false;
     } finally {
       _isContactsSyncInProgress = false;
       _contactsSyncCompleter = null;

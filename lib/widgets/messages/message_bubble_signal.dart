@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../models/message.dart';
 import '../../models/message_route_metadata.dart';
 import '../../models/path_selection.dart';
@@ -112,7 +113,7 @@ Widget buildReceivedSignalStatus(
   required int? rssiDbm,
   required double? snrDb,
 }) {
-  final hopLabel = hopDisplayLabel(message);
+  final hopLabel = hopDisplayLabel(context, message);
 
   return Wrap(
     spacing: 4,
@@ -208,7 +209,7 @@ Widget buildSentDirectSignalStatus(
       _techChip(
         context,
         icon: Icons.alt_route,
-        label: hopDisplayLabelForMessage(message, routeMetadata),
+        label: hopDisplayLabelForMessage(context, message, routeMetadata),
         color: Colors.indigo,
       ),
       _techChip(
@@ -286,22 +287,25 @@ String _formatMs(int value) {
   return '${value}ms';
 }
 
-String hopDisplayLabel(Message message) {
-  if (message.pathLen == 0) return 'Direct';
-  if (message.pathLen >= 255 && message.isContactMessage) return 'Direct';
-  if (message.pathLen >= 255) return 'Unknown';
-  return '${message.pathLen} hop${message.pathLen == 1 ? '' : 's'}';
+String hopDisplayLabel(BuildContext context, Message message) {
+  final l10n = AppLocalizations.of(context)!;
+  if (message.pathLen == 0) return l10n.direct;
+  if (message.pathLen >= 255 && message.isContactMessage) return l10n.direct;
+  if (message.pathLen >= 255) return l10n.unknown;
+  return l10n.hopCount(message.pathLen);
 }
 
 String hopDisplayLabelForMessage(
+  BuildContext context,
   Message message,
   MessageRouteMetadata? routeMetadata,
 ) {
+  final l10n = AppLocalizations.of(context)!;
   final effectivePathLen = routeMetadata?.hopCount ?? message.pathLen;
-  if (effectivePathLen == 0) return 'Direct';
-  if (effectivePathLen >= 255 && message.isContactMessage) return 'Direct';
-  if (effectivePathLen >= 255) return 'Unknown';
-  return '$effectivePathLen hop${effectivePathLen == 1 ? '' : 's'}';
+  if (effectivePathLen == 0) return l10n.direct;
+  if (effectivePathLen >= 255 && message.isContactMessage) return l10n.direct;
+  if (effectivePathLen >= 255) return l10n.unknown;
+  return l10n.hopCount(effectivePathLen);
 }
 
 Widget _techChip(

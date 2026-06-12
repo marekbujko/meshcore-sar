@@ -196,7 +196,8 @@ class AppProvider with ChangeNotifier {
   bool _isInitialized = false;
   bool get isInitialized => _isInitialized;
 
-  bool get isSimpleMode => true;
+  bool _isSimpleMode = false;
+  bool get isSimpleMode => _isSimpleMode;
 
   bool _isMapEnabled = true;
   bool get isMapEnabled => _isMapEnabled;
@@ -283,6 +284,7 @@ class AppProvider with ChangeNotifier {
         _canStartAutomaticMessageSync;
     _wasDeviceConnected = connectionProvider.deviceInfo.isConnected;
     _initializeLocationTracking();
+    _loadSimpleMode();
     _loadMapEnabled();
     _loadContactsEnabled();
     _loadContactsSectionVisibility();
@@ -591,6 +593,29 @@ class AppProvider with ChangeNotifier {
       }
     }
     return true;
+  }
+
+  /// Load simple mode setting from shared preferences
+  Future<void> _loadSimpleMode() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _isSimpleMode = prefs.getBool(_scopedKey('simple_mode_enabled')) ?? false;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error loading simple mode setting: $e');
+    }
+  }
+
+  /// Toggle simple mode on/off
+  Future<void> toggleSimpleMode(bool enabled) async {
+    try {
+      _isSimpleMode = enabled;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool(_scopedKey('simple_mode_enabled'), enabled);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Error saving simple mode setting: $e');
+    }
   }
 
   /// Load map enabled setting from shared preferences
@@ -1141,9 +1166,22 @@ class AppProvider with ChangeNotifier {
             }
 
             if (isEmptyChannelInfo) {
+              // The device channel list is authoritative: an empty slot means
+              // any locally retained channel in that slot was deleted on the
+              // device, so drop it from the channel list and the contacts UI.
+              // Message history is kept (only app-initiated deletes clear it).
               debugPrint(
-                '   ⏭️  Ignoring empty channel slot $channelIdx during sync',
+                '   🧹 Empty channel slot $channelIdx - dropping stale local channel if present',
               );
+              channelsProvider.removeChannel(channelIdx);
+
+              final publicKeyBytes = Uint8List(32);
+              publicKeyBytes[0] = 0xFF; // Special marker for channels
+              publicKeyBytes[1] = channelIdx; // Channel index
+              final publicKeyHex = publicKeyBytes
+                  .map((b) => b.toRadixString(16).padLeft(2, '0'))
+                  .join('');
+              contactsProvider.removeContact(publicKeyHex);
               return;
             }
 
@@ -2018,9 +2056,8 @@ class AppProvider with ChangeNotifier {
 
     final latestContact =
         contactsProvider.findContactByKey(contact.publicKey) ?? contact;
-    final manualSelection = await _pathHistoryService.getManualSelectionForContact(
-      latestContact,
-    );
+    final manualSelection = await _pathHistoryService
+        .getManualSelectionForContact(latestContact);
     final session =
         _directMessageRouteSessions[messageId] ??
         _DirectMessageRouteSession(
@@ -2548,8 +2585,13 @@ class AppProvider with ChangeNotifier {
       // Get battery and storage information
       await connectionProvider.getBatteryAndStorage();
 
-      // Load contacts (waits for device to finish sending all contacts)
-      await connectionProvider.getContacts();
+      // Load contacts (waits for device to finish sending all contacts).
+      // The device list is authoritative: contacts it no longer has are
+      // deleted locally once a complete list was received.
+      final contactListComplete = await connectionProvider.getContacts();
+      contactsProvider.finalizeDeviceContactSync(
+        deviceListComplete: contactListComplete,
+      );
 
       // Sync all channels so slot assignment and channel state mirror the device.
       final channelsToSync = connectionProvider.deviceInfo.maxChannels;
@@ -2567,12 +2609,10 @@ class AppProvider with ChangeNotifier {
       debugPrint(
         '🔄 [AppProvider] Performing initial message sync (fallback for missed pushes)',
       );
-      final initialMessageCount =
-          await messagesProvider.withReceivedNotificationsSuppressed(
-        () => connectionProvider.syncAllMessages(
-          force: true,
-        ),
-      );
+      final initialMessageCount = await messagesProvider
+          .withReceivedNotificationsSuppressed(
+            () => connectionProvider.syncAllMessages(force: true),
+          );
       debugPrint(
         '📥 [AppProvider] Initial sync retrieved $initialMessageCount message(s)',
       );
@@ -2624,18 +2664,19 @@ class AppProvider with ChangeNotifier {
         devicePublicKey: connectionProvider.deviceInfo.publicKey,
       );
       channelsProvider.prepareForDeviceSync();
-      await connectionProvider.getContacts();
+      final contactListComplete = await connectionProvider.getContacts();
+      contactsProvider.finalizeDeviceContactSync(
+        deviceListComplete: contactListComplete,
+      );
       await connectionProvider.syncChannels(
         maxChannels: connectionProvider.deviceInfo.maxChannels,
       );
       await refreshChannelLocationSharingState();
 
-      final messageCount =
-          await messagesProvider.withReceivedNotificationsSuppressed(
-        () => connectionProvider.syncAllMessages(
-          force: true,
-        ),
-      );
+      final messageCount = await messagesProvider
+          .withReceivedNotificationsSuppressed(
+            () => connectionProvider.syncAllMessages(force: true),
+          );
       debugPrint(
         '📥 [AppProvider] Reconnect sync retrieved $messageCount message(s)',
       );
@@ -2881,7 +2922,8 @@ class AppProvider with ChangeNotifier {
     final sharingMode = channelLocationSharingModeForChannel(channelIdx);
 
     return ChannelLocationSharingState(
-      mode: sharingMode ??
+      mode:
+          sharingMode ??
           (_hardwareChannelLocationSharingSupported
               ? ChannelLocationSharingMode.hardware
               : ChannelLocationSharingMode.appFallback),
@@ -2923,7 +2965,9 @@ class AppProvider with ChangeNotifier {
         await locationTrackingService.setFastLocationUpdatesEnabled(false);
         await refreshChannelLocationSharingState();
         if (_hardwareChannelLocationSharingChannelIdx != channelIdx) {
-          throw StateError('Radio location sharing did not enable for this channel');
+          throw StateError(
+            'Radio location sharing did not enable for this channel',
+          );
         }
         notifyListeners();
         return ChannelLocationSharingResult(
@@ -2933,13 +2977,16 @@ class AppProvider with ChangeNotifier {
             hardwareSupported: true,
             isConnected: true,
           ),
-          message: l10n?.sharingLocationFromRadio ?? 'Sharing location on this channel from the radio.',
+          message:
+              l10n?.sharingLocationFromRadio ??
+              'Sharing location on this channel from the radio.',
         );
       }
 
       _hardwareChannelLocationSharingSupported = false;
       _hardwareChannelLocationSharingChannelIdx = null;
-      final previousEnabled = locationTrackingService.fastLocationUpdatesEnabled;
+      final previousEnabled =
+          locationTrackingService.fastLocationUpdatesEnabled;
       final previousChannelIdx = locationTrackingService.fastLocationChannelIdx;
       try {
         await locationTrackingService.updateFastLocationChannelIdx(channelIdx);
@@ -2964,12 +3011,14 @@ class AppProvider with ChangeNotifier {
         state: const ChannelLocationSharingState(
           mode: ChannelLocationSharingMode.appFallback,
           isSharing: true,
-            hardwareSupported: false,
-            isConnected: true,
-          ),
-          message: l10n?.sharingLocationFromPhone ?? 'Sharing location on this channel from the phone.',
-        );
-      }
+          hardwareSupported: false,
+          isConnected: true,
+        ),
+        message:
+            l10n?.sharingLocationFromPhone ??
+            'Sharing location on this channel from the phone.',
+      );
+    }
 
     final activeHardwareChannelIdx = _hardwareChannelLocationSharingIdxFromVars(
       vars,
@@ -2991,7 +3040,9 @@ class AppProvider with ChangeNotifier {
       _hardwareChannelLocationSharingChannelIdx = null;
       await refreshChannelLocationSharingState();
       if (_hardwareChannelLocationSharingChannelIdx == channelIdx) {
-        throw StateError('Radio location sharing is still enabled for this channel');
+        throw StateError(
+          'Radio location sharing is still enabled for this channel',
+        );
       }
       notifyListeners();
       return ChannelLocationSharingResult(
@@ -3001,7 +3052,9 @@ class AppProvider with ChangeNotifier {
           hardwareSupported: true,
           isConnected: true,
         ),
-        message: l10n?.stoppedSharingLocation ?? 'Stopped sharing location on this channel.',
+        message:
+            l10n?.stoppedSharingLocation ??
+            'Stopped sharing location on this channel.',
       );
     }
 
@@ -3015,7 +3068,9 @@ class AppProvider with ChangeNotifier {
         hardwareSupported: false,
         isConnected: true,
       ),
-      message: l10n?.stoppedSharingLocation ?? 'Stopped sharing location on this channel.',
+      message:
+          l10n?.stoppedSharingLocation ??
+          'Stopped sharing location on this channel.',
     );
   }
 
@@ -4093,8 +4148,15 @@ class AppProvider with ChangeNotifier {
     if (!connectionProvider.deviceInfo.isConnected) return;
 
     try {
-      // Sync contacts
-      await connectionProvider.getContacts();
+      // Sync contacts. The device list is authoritative: contacts it no
+      // longer has are deleted locally once a complete list was received.
+      await contactsProvider.prepareForDeviceContactSync(
+        devicePublicKey: connectionProvider.deviceInfo.publicKey,
+      );
+      final contactListComplete = await connectionProvider.getContacts();
+      contactsProvider.finalizeDeviceContactSync(
+        deviceListComplete: contactListComplete,
+      );
 
       // Sync all channels so refresh reflects the full device state.
       channelsProvider.prepareForDeviceSync();

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../l10n/app_localizations.dart';
+import '../models/device_info.dart';
 import '../providers/connection_provider.dart';
 import '../services/wizard_preferences.dart';
 import '../widgets/connection_dialog.dart';
@@ -168,7 +169,9 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
       codingRate: 5,
     ),
   ];
-  _RadioPreset _selectedPreset = _radioPresets[4];
+  /// Null means "keep the device's current radio settings" (no preset write).
+  _RadioPreset? _selectedPreset;
+  bool _userSelectedPreset = false;
 
   @override
   void initState() {
@@ -176,6 +179,77 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
     final deviceInfo = context.read<ConnectionProvider>().deviceInfo;
     _deviceNameController.text =
         deviceInfo.selfName ?? deviceInfo.deviceName ?? '';
+    _selectedPreset = _matchRadioPreset(deviceInfo);
+  }
+
+  static const Map<int, int> _bandwidthHzToValue = {
+    7800: 0,
+    10400: 1,
+    15600: 2,
+    20800: 3,
+    31250: 4,
+    41700: 5,
+    62500: 6,
+    125000: 7,
+    250000: 8,
+    500000: 9,
+  };
+
+  static int? _normalizeBandwidthValue(int? bw) {
+    if (bw == null) {
+      return null;
+    }
+    if (bw >= 0 && bw <= 9) {
+      return bw;
+    }
+    return _bandwidthHzToValue[bw];
+  }
+
+  static int? _normalizeSpreadingFactor(int? spreadingFactor) {
+    if (spreadingFactor == null ||
+        spreadingFactor < 7 ||
+        spreadingFactor > 12) {
+      return null;
+    }
+    return spreadingFactor;
+  }
+
+  static int? _normalizeCodingRate(int? codingRate) {
+    if (codingRate == null) {
+      return null;
+    }
+    if (codingRate >= 5 && codingRate <= 8) {
+      return codingRate;
+    }
+    if (codingRate >= 1 && codingRate <= 4) {
+      return codingRate + 4;
+    }
+    return null;
+  }
+
+  /// Find the preset matching the device's current radio settings, if any.
+  static _RadioPreset? _matchRadioPreset(DeviceInfo deviceInfo) {
+    final frequencyKhz = deviceInfo.radioFreq;
+    final bandwidth = _normalizeBandwidthValue(deviceInfo.radioBw);
+    final spreadingFactor = _normalizeSpreadingFactor(deviceInfo.radioSf);
+    final codingRate = _normalizeCodingRate(deviceInfo.radioCr);
+
+    if (frequencyKhz == null ||
+        bandwidth == null ||
+        spreadingFactor == null ||
+        codingRate == null) {
+      return null;
+    }
+
+    for (final preset in _radioPresets) {
+      if (preset.frequencyKhz == frequencyKhz &&
+          preset.bandwidth == bandwidth &&
+          preset.spreadingFactor == spreadingFactor &&
+          preset.codingRate == codingRate) {
+        return preset;
+      }
+    }
+    return null;
   }
 
   @override
@@ -233,13 +307,14 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
     if (!mounted) return;
     final deviceInfo = connectionProvider.deviceInfo;
     final fetchedName = deviceInfo.selfName ?? deviceInfo.deviceName ?? '';
-    if (fetchedName.isNotEmpty) {
-      setState(() {
+    setState(() {
+      if (fetchedName.isNotEmpty) {
         _deviceNameController.text = fetchedName;
-      });
-    } else {
-      setState(() {});
-    }
+      }
+      if (!_userSelectedPreset) {
+        _selectedPreset = _matchRadioPreset(deviceInfo);
+      }
+    });
   }
 
   Future<void> _handleDeviceSetupAction() async {
@@ -263,21 +338,49 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
       _isApplyingDeviceSetup = true;
     });
 
+    final selectedPreset = _selectedPreset;
+
     try {
+      connectionProvider.clearError();
       await connectionProvider.setAdvertName(trimmedName);
-      await connectionProvider.setRadioParams(
-        frequency: _selectedPreset.frequencyKhz,
-        bandwidth: _selectedPreset.bandwidth,
-        spreadingFactor: _selectedPreset.spreadingFactor,
-        codingRate: _selectedPreset.codingRate,
-      );
+      var saveError = connectionProvider.error;
+
+      // Only write radio params when the user picked a preset that differs
+      // from the device's current settings.
+      if (saveError == null &&
+          selectedPreset != null &&
+          selectedPreset != _matchRadioPreset(deviceInfo)) {
+        await connectionProvider.setRadioParams(
+          frequency: selectedPreset.frequencyKhz,
+          bandwidth: selectedPreset.bandwidth,
+          spreadingFactor: selectedPreset.spreadingFactor,
+          codingRate: selectedPreset.codingRate,
+        );
+        saveError = connectionProvider.error;
+      }
+
+      if (saveError != null) {
+        connectionProvider.clearError();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.failedToSave(saveError)),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       await connectionProvider.refreshDeviceInfo();
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            l10n.wizardDeviceSetupSaved(trimmedName, _selectedPreset.label),
+            l10n.wizardDeviceSetupSaved(
+              trimmedName,
+              selectedPreset?.label ?? 'current radio settings',
+            ),
           ),
           backgroundColor: Colors.green,
         ),
@@ -555,7 +658,8 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
-                      DropdownButtonFormField<_RadioPreset>(
+                      DropdownButtonFormField<_RadioPreset?>(
+                        key: ValueKey(_selectedPreset?.id ?? 'keep_current'),
                         initialValue: _selectedPreset,
                         isExpanded: true,
                         decoration: InputDecoration(
@@ -563,21 +667,28 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
                           border: OutlineInputBorder(),
                           helperText: l10n.wizardConfigRegionHelp,
                         ),
-                        items: _radioPresets
-                            .map(
-                              (preset) => DropdownMenuItem<_RadioPreset>(
-                                value: preset,
-                                child: Text(
-                                  preset.label,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                        items: [
+                          const DropdownMenuItem<_RadioPreset?>(
+                            value: null,
+                            child: Text(
+                              'Keep current settings',
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          ..._radioPresets.map(
+                            (preset) => DropdownMenuItem<_RadioPreset?>(
+                              value: preset,
+                              child: Text(
+                                preset.label,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                            )
-                            .toList(),
+                            ),
+                          ),
+                        ],
                         onChanged: (preset) {
-                          if (preset == null) return;
                           setState(() {
                             _selectedPreset = preset;
+                            _userSelectedPreset = true;
                           });
                         },
                       ),
@@ -591,13 +702,14 @@ class _WelcomeWizardScreenState extends State<WelcomeWizardScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _selectedPreset.label,
+                        _selectedPreset?.label ?? 'Keep current settings',
                         style: Theme.of(context).textTheme.titleMedium
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        _selectedPreset.summary,
+                        _selectedPreset?.summary ??
+                            'Saving will not change the radio settings on your device.',
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       SizedBox(height: 14),

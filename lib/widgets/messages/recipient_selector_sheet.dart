@@ -163,11 +163,11 @@ class _RecipientSelectorSheetState extends State<RecipientSelectorSheet> {
   String _sectionDescription(AppLocalizations l10n, String type) {
     switch (type) {
       case 'channel':
-        return 'Broadcast lanes for nearby mesh traffic';
+        return l10n.channelsSectionDescription;
       case 'room':
-        return 'Shared spaces for ongoing team coordination';
+        return l10n.roomsSectionDescription;
       case 'contact':
-        return 'Direct people and devices you can reach';
+        return l10n.contactsSectionDescription;
       default:
         return '';
     }
@@ -302,7 +302,7 @@ class _RecipientSelectorSheetState extends State<RecipientSelectorSheet> {
 
     if (previewData.participantNames.isEmpty) {
       return Text(
-        'No recent chatters',
+        AppLocalizations.of(context)!.noRecentChatters,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: Theme.of(
@@ -972,14 +972,14 @@ class _RecipientSelectorSheetState extends State<RecipientSelectorSheet> {
                                       borderRadius: BorderRadius.circular(999),
                                     ),
                                     child: Text(
-                                      'Public',
+                                      AppLocalizations.of(context)!.public,
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelSmall
                                           ?.copyWith(
                                             color: accentColor,
                                             fontWeight: FontWeight.w800,
-                                      ),
+                                          ),
                                     ),
                                   ),
                                 ],

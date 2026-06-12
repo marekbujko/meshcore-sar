@@ -27,6 +27,7 @@ class MessagesComposer extends StatelessWidget {
   final VoidCallback onShowRecipientSelector;
   final Future<void> Function() onStartVoiceRecording;
   final Future<void> Function() onStopAndSendVoice;
+  final Future<void> Function() onCancelVoiceRecording;
   final Future<void> Function() onSendMessage;
   final VoidCallback? onLongPressSend;
   final String? regionScopeName;
@@ -53,6 +54,7 @@ class MessagesComposer extends StatelessWidget {
     required this.onShowRecipientSelector,
     required this.onStartVoiceRecording,
     required this.onStopAndSendVoice,
+    required this.onCancelVoiceRecording,
     required this.onSendMessage,
     this.onLongPressSend,
     this.regionScopeName,
@@ -110,6 +112,12 @@ class MessagesComposer extends StatelessWidget {
                                 ? onStopAndSendVoice
                                 : onShowComposerActions,
                           ),
+                          if (isRecording) ...[
+                            const SizedBox(width: 6),
+                            _CancelRecordingButton(
+                              onPressed: onCancelVoiceRecording,
+                            ),
+                          ],
                           if (regionScopeName != null &&
                               onRegionScopeTap != null) ...[
                             const SizedBox(width: 6),
@@ -142,13 +150,14 @@ class MessagesComposer extends StatelessWidget {
                               !isRecording &&
                               !isSendingVoice &&
                               textController.text.trim().isNotEmpty;
+                          final l10n = AppLocalizations.of(context)!;
                           final semanticsLabel = isRecording
-                              ? 'Recording... release to send voice'
+                              ? l10n.recordingReleaseToSend
                               : (isSendingVoice
-                                    ? 'Sending voice...'
+                                    ? l10n.sendingVoice
                                     : voiceSupported
-                                    ? 'Send (long press to record voice)'
-                                    : 'Send');
+                                    ? l10n.sendLongPressToRecordVoice
+                                    : l10n.send);
 
                           return Row(
                             crossAxisAlignment: CrossAxisAlignment.center,
@@ -173,6 +182,7 @@ class MessagesComposer extends StatelessWidget {
                                 onLongPressSend: onLongPressSend,
                                 onStartVoiceRecording: onStartVoiceRecording,
                                 onStopAndSendVoice: onStopAndSendVoice,
+                                onCancelVoiceRecording: onCancelVoiceRecording,
                               ),
                             ],
                           );
@@ -294,9 +304,38 @@ class _ComposerActionButton extends StatelessWidget {
       ),
       child: IconButton(
         icon: Icon(isRecording ? Icons.stop : Icons.add, size: 20),
-        tooltip: isRecording ? 'Stop recording' : 'More actions',
+        tooltip: isRecording
+            ? AppLocalizations.of(context)!.stopRecording
+            : AppLocalizations.of(context)!.moreActions,
         onPressed: onPressed,
         color: isRecording ? Colors.red : Theme.of(context).colorScheme.primary,
+      ),
+    );
+  }
+}
+
+class _CancelRecordingButton extends StatelessWidget {
+  final Future<void> Function() onPressed;
+
+  const _CancelRecordingButton({required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: Theme.of(context).dividerColor.withValues(alpha: 0.35),
+        ),
+      ),
+      child: IconButton(
+        icon: const Icon(Icons.delete_outline, size: 20),
+        tooltip: AppLocalizations.of(context)!.discardRecording,
+        onPressed: onPressed,
+        color: Theme.of(context).colorScheme.error,
       ),
     );
   }
@@ -458,6 +497,7 @@ class _SendButton extends StatelessWidget {
   final VoidCallback? onLongPressSend;
   final Future<void> Function() onStartVoiceRecording;
   final Future<void> Function() onStopAndSendVoice;
+  final Future<void> Function() onCancelVoiceRecording;
 
   const _SendButton({
     required this.canSendText,
@@ -471,6 +511,7 @@ class _SendButton extends StatelessWidget {
     this.onLongPressSend,
     required this.onStartVoiceRecording,
     required this.onStopAndSendVoice,
+    required this.onCancelVoiceRecording,
   });
 
   @override
@@ -483,14 +524,14 @@ class _SendButton extends StatelessWidget {
       onLongPress: canSendText && onLongPressSend != null
           ? onLongPressSend
           : (voiceSupported && !isSendingVoice)
-              ? () {
-                  if (isRecording) {
-                    onStopAndSendVoice();
-                    return;
-                  }
-                  onStartVoiceRecording();
-                }
-              : null,
+          ? () {
+              if (isRecording) {
+                onStopAndSendVoice();
+                return;
+              }
+              onStartVoiceRecording();
+            }
+          : null,
       child: Tooltip(
         message: semanticsLabel,
         excludeFromSemantics: true,
@@ -500,13 +541,15 @@ class _SendButton extends StatelessWidget {
           onLongPressStart: canSendText && onLongPressSend != null
               ? (_) => onLongPressSend!()
               : (voiceSupported && !isSendingVoice)
-                  ? (_) => onStartVoiceRecording()
-                  : null,
+              ? (_) => onStartVoiceRecording()
+              : null,
           onLongPressEnd: (!canSendText && voiceSupported && isRecording)
               ? (_) => onStopAndSendVoice()
               : null,
+          // Finger slid off the button: discard the recording instead of
+          // sending it.
           onLongPressCancel: (!canSendText && voiceSupported && isRecording)
-              ? onStopAndSendVoice
+              ? onCancelVoiceRecording
               : null,
           child: Column(
             mainAxisSize: MainAxisSize.min,

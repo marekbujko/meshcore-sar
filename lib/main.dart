@@ -34,6 +34,7 @@ import 'screens/discovery_screen.dart';
 import 'screens/home_screen.dart';
 import 'screens/welcome_wizard_screen.dart';
 import 'theme/app_theme.dart';
+import 'utils/toast_logger.dart';
 import 'l10n/app_localizations.dart';
 
 Future<void> main() async {
@@ -395,6 +396,7 @@ class _MeshCoreSarAppState extends State<MeshCoreSarApp> {
         final systemBrightness = MediaQuery.platformBrightnessOf(context);
         final materialApp = MaterialApp(
           navigatorKey: _navigatorKey,
+          scaffoldMessengerKey: rootScaffoldMessengerKey,
           key: ValueKey<String?>(
             '${_locale?.languageCode ?? 'system'}_${_themeMode.name}',
           ),

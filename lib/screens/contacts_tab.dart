@@ -536,11 +536,13 @@ class _ContactsTabState extends State<ContactsTab> {
   ) async {
     final channelIdx = channel.publicKey.length > 1 ? channel.publicKey[1] : 0;
     try {
-      final result = await context.read<AppProvider>().setChannelLocationSharingEnabled(
-        channelIdx,
-        enabled,
-        l10n: AppLocalizations.of(context),
-      );
+      final result = await context
+          .read<AppProvider>()
+          .setChannelLocationSharingEnabled(
+            channelIdx,
+            enabled,
+            l10n: AppLocalizations.of(context),
+          );
       if (!context.mounted) return;
       ToastLogger.success(context, result.message);
     } catch (error) {
@@ -577,7 +579,11 @@ class _ContactsTabState extends State<ContactsTab> {
           .read<AppProvider>()
           .getChannelLocationSharingState(channelIdx);
       if (!context.mounted) return;
-      await _setChannelLocationSharing(context, channel, !sharingState.isSharing);
+      await _setChannelLocationSharing(
+        context,
+        channel,
+        !sharingState.isSharing,
+      );
     } catch (error) {
       if (!context.mounted) return;
       ToastLogger.error(context, _locationSharingErrorMessage(error));
@@ -591,9 +597,9 @@ class _ContactsTabState extends State<ContactsTab> {
     );
     final channelLocationSharingFuture =
         !channel.isPublicChannel && channel.publicKey.length > 1
-        ? context
-              .read<AppProvider>()
-              .getChannelLocationSharingState(channel.publicKey[1])
+        ? context.read<AppProvider>().getChannelLocationSharingState(
+            channel.publicKey[1],
+          )
         : null;
 
     showModalBottomSheet<void>(
@@ -1448,7 +1454,9 @@ class _ContactsTabState extends State<ContactsTab> {
                         height: 1.1,
                       ),
                       decoration: InputDecoration(
-                        hintText: AppLocalizations.of(context)!.searchThisSection,
+                        hintText: AppLocalizations.of(
+                          context,
+                        )!.searchThisSection,
                         hintStyle: theme.textTheme.bodyMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant.withValues(
                             alpha: 0.85,
@@ -1823,81 +1831,90 @@ class _InferredContactGroupCard extends StatelessWidget {
 
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      decoration: BoxDecoration(
+      child: Material(
         color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-        child: ExpansionTile(
-          tilePadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-          childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
-          minTileHeight: 44,
-          initiallyExpanded: false,
-          leading: Icon(
-            Icons.folder_copy_outlined,
-            size: 16,
-            color: colorScheme.primary,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.35),
           ),
-          title: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
+        ),
+        child: Theme(
+          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+          child: ExpansionTile(
+            tilePadding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 0,
+            ),
+            childrenPadding: const EdgeInsets.fromLTRB(10, 0, 10, 6),
+            minTileHeight: 44,
+            initiallyExpanded: false,
+            leading: Icon(
+              Icons.folder_copy_outlined,
+              size: 16,
+              color: colorScheme.primary,
+            ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-                decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  contacts.length.toString(),
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-              ),
-              if (onDelete != null) ...[
-                const SizedBox(width: 2),
-                IconButton(
-                  tooltip: AppLocalizations.of(context)!.deleteGroup,
-                  onPressed: onDelete,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints.tightFor(
-                    width: 32,
-                    height: 32,
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 1,
                   ),
-                  padding: EdgeInsets.zero,
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 16,
-                    color: colorScheme.error,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    contacts.length.toString(),
+                    style: Theme.of(context).textTheme.labelSmall,
                   ),
                 ),
+                if (onDelete != null) ...[
+                  const SizedBox(width: 2),
+                  IconButton(
+                    tooltip: AppLocalizations.of(context)!.deleteGroup,
+                    onPressed: onDelete,
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints.tightFor(
+                      width: 32,
+                      height: 32,
+                    ),
+                    padding: EdgeInsets.zero,
+                    icon: Icon(
+                      Icons.delete_outline_rounded,
+                      size: 16,
+                      color: colorScheme.error,
+                    ),
+                  ),
+                ],
               ],
+            ),
+            children: [
+              ...contacts.map(
+                (contact) => ContactTile(
+                  contact: contact,
+                  compact: compactContacts,
+                  currentPosition: currentPosition,
+                  calculateDistance: calculateDistance,
+                  formatDistance: formatDistance,
+                  onNavigateToMap: onNavigateToMap,
+                  onNavigateToMessages: onNavigateToMessages,
+                ),
+              ),
             ],
           ),
-          children: [
-            ...contacts.map(
-              (contact) => ContactTile(
-                contact: contact,
-                compact: compactContacts,
-                currentPosition: currentPosition,
-                calculateDistance: calculateDistance,
-                formatDistance: formatDistance,
-                onNavigateToMap: onNavigateToMap,
-                onNavigateToMessages: onNavigateToMessages,
-              ),
-            ),
-          ],
         ),
       ),
     );
@@ -1940,11 +1957,7 @@ class _ChannelActivityCard extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: Colors.white, width: 2),
       ),
-      child: Icon(
-        Icons.location_pin,
-        size: 11,
-        color: Colors.white,
-      ),
+      child: Icon(Icons.location_pin, size: 11, color: Colors.white),
     );
   }
 
@@ -2599,8 +2612,7 @@ class _ContactsRegionScopeSheet extends StatefulWidget {
       _ContactsRegionScopeSheetState();
 }
 
-class _ContactsRegionScopeSheetState
-    extends State<_ContactsRegionScopeSheet> {
+class _ContactsRegionScopeSheetState extends State<_ContactsRegionScopeSheet> {
   final TextEditingController _nameController = TextEditingController();
 
   @override

@@ -120,34 +120,6 @@ class ContactTile extends StatelessWidget {
         : null;
     void handleTap() => _handlePrimaryTap(context, contact);
 
-    final onLongPress = isPingInProgress
-        ? null
-        : () async {
-            final connectionProvider = context.read<ConnectionProvider>();
-            final hasPath = contact.routeHasPath;
-
-            final result = await connectionProvider.smartPing(
-              contactPublicKey: contact.publicKey,
-              hasPath: hasPath,
-              onRetryWithFlooding: () {
-                if (context.mounted) {
-                  ToastLogger.warning(
-                    context,
-                    AppLocalizations.of(
-                      context,
-                    )!.directPingTimeout(contact.displayName),
-                  );
-                }
-              },
-            );
-
-            if (context.mounted && !result.success) {
-              ToastLogger.error(
-                context,
-                AppLocalizations.of(context)!.pingFailed(contact.displayName),
-              );
-            }
-          };
     final colorScheme = Theme.of(context).colorScheme;
     final titleStyle = Theme.of(context).textTheme.titleMedium?.copyWith(
       fontWeight: FontWeight.w800,
@@ -233,7 +205,7 @@ class ContactTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: handleTap,
-          onLongPress: onLongPress,
+          onLongPress: handleTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
@@ -418,6 +390,36 @@ class ContactTile extends StatelessWidget {
     _showContactActionSheet(context, contact);
   }
 
+  Future<void> _smartPingContact(BuildContext context, Contact contact) async {
+    final connectionProvider = context.read<ConnectionProvider>();
+    final hasPath = contact.routeHasPath;
+
+    final result = await connectionProvider.smartPing(
+      contactPublicKey: contact.publicKey,
+      hasPath: hasPath,
+      onRetryWithFlooding: () {
+        if (context.mounted) {
+          ToastLogger.warning(
+            context,
+            AppLocalizations.of(
+              context,
+            )!.directPingTimeout(contact.displayName),
+          );
+        }
+      },
+    );
+
+    if (!context.mounted) return;
+    if (result.success) {
+      ToastLogger.success(context, 'Ping reply from ${contact.displayName}');
+    } else {
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.pingFailed(contact.displayName),
+      );
+    }
+  }
+
   String _locationSharingErrorMessage(Object error) {
     final message = error.toString();
     if (message.startsWith('Bad state: ')) {
@@ -498,6 +500,11 @@ class ContactTile extends StatelessWidget {
         contact.type == ContactType.repeater ||
         contact.type == ContactType.sensor;
     final canPreviewSensor = contact.isSensor;
+    final canSmartPing =
+        contact.type == ContactType.chat || contact.type == ContactType.sensor;
+    final isPingInProgress = context.read<ConnectionProvider>().isPingInProgress(
+      contact.publicKey,
+    );
     final sensorsProvider = context.read<SensorsProvider>();
     final isInSensors = sensorsProvider.isWatched(contact.publicKeyHex);
     final channelLocationSharingFuture =
@@ -660,6 +667,16 @@ class ContactTile extends StatelessWidget {
                 onTap: () async {
                   Navigator.pop(context);
                   _pingRelay(context, contact);
+                },
+              ),
+            if (canSmartPing)
+              _ContactSheetAction(
+                icon: Icons.network_ping,
+                label: l10n.ping,
+                enabled: !isPingInProgress,
+                onTap: () async {
+                  Navigator.pop(context);
+                  await _smartPingContact(context, contact);
                 },
               ),
             if (!contact.isPublicChannel)
@@ -1596,11 +1613,12 @@ class _ContactActionSheetState extends State<_ContactActionSheet> {
                     ),
                   ),
                 ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerLow,
+                Material(
+                  color: colorScheme.surfaceContainerLow,
+                  clipBehavior: Clip.antiAlias,
+                  shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(24),
-                    border: Border.all(
+                    side: BorderSide(
                       color: colorScheme.outlineVariant.withValues(alpha: 0.28),
                     ),
                   ),

@@ -119,7 +119,11 @@ class TicTacToeMessageBubble extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            _statusText(state: state, mySymbol: mySymbol),
+            _statusText(
+              l10n: AppLocalizations.of(context)!,
+              state: state,
+              mySymbol: mySymbol,
+            ),
             style: Theme.of(
               context,
             ).textTheme.labelSmall?.copyWith(color: statusColor),
@@ -139,7 +143,10 @@ class TicTacToeMessageBubble extends StatelessWidget {
   }) async {
     if (idx < 0 || idx > 8 || state.board[idx] != null) return;
     if (!connectionProvider.deviceInfo.isConnected) {
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -177,19 +184,23 @@ class TicTacToeMessageBubble extends StatelessWidget {
     if (!sent) {
       messagesProvider.markMessageFailed(messageId);
       if (!context.mounted) return;
-      ToastLogger.error(context, 'Failed to send Tic-Tac-Toe move');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.failedToSendTicTacToeMove,
+      );
     }
   }
 
   static String _statusText({
+    required AppLocalizations l10n,
     required TicTacToeGameState state,
     required String mySymbol,
   }) {
     if (state.winnerSymbol != null) {
-      return state.winnerSymbol == mySymbol ? 'You won' : 'Opponent won';
+      return state.winnerSymbol == mySymbol ? l10n.youWon : l10n.opponentWon;
     }
-    if (state.isDraw) return 'Draw';
-    return state.nextSymbol == mySymbol ? 'Your turn' : 'Opponent turn';
+    if (state.isDraw) return l10n.gameDraw;
+    return state.nextSymbol == mySymbol ? l10n.yourTurn : l10n.opponentTurn;
   }
 
   static String _key6Hex(Uint8List key) => key

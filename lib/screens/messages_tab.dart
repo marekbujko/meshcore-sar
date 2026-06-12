@@ -27,6 +27,7 @@ import '../services/message_destination_preferences.dart';
 import '../services/voice_bitrate_preferences.dart';
 import '../services/voice_recorder_service.dart';
 import '../services/voice_codec_service.dart';
+import '../utils/advert_helper.dart';
 import '../utils/toast_logger.dart';
 import '../utils/key_comparison.dart';
 import '../utils/contact_sorting.dart';
@@ -149,6 +150,8 @@ class _MessagesTabState extends State<MessagesTab> {
   String _mentionQuery = '';
   List<Contact> _mentionSuggestions = const [];
   ContactsProvider? _contactsProvider;
+  AppProvider? _appProvider;
+  bool? _lastKnownSimpleMode;
 
   // Message destination state
   String _destinationType =
@@ -207,6 +210,13 @@ class _MessagesTabState extends State<MessagesTab> {
       _contactsProvider = contactsProvider;
       _contactsProvider?.addListener(_handleContactsChanged);
     }
+    final appProvider = context.read<AppProvider>();
+    if (!identical(_appProvider, appProvider)) {
+      _appProvider?.removeListener(_handleSimpleModeChanged);
+      _appProvider = appProvider;
+      _lastKnownSimpleMode = appProvider.isSimpleMode;
+      _appProvider?.addListener(_handleSimpleModeChanged);
+    }
     _scheduleDestinationSync();
   }
 
@@ -217,6 +227,7 @@ class _MessagesTabState extends State<MessagesTab> {
     _voiceStreamSub?.cancel();
     _voiceRecorder.dispose();
     _contactsProvider?.removeListener(_handleContactsChanged);
+    _appProvider?.removeListener(_handleSimpleModeChanged);
     _focusNode.removeListener(_handleFocusChanged);
     _textController.dispose();
     _focusNode.dispose();
@@ -243,6 +254,14 @@ class _MessagesTabState extends State<MessagesTab> {
 
   void _handleContactsChanged() {
     if (!mounted) return;
+    _scheduleDestinationSync();
+  }
+
+  void _handleSimpleModeChanged() {
+    if (!mounted) return;
+    final simpleMode = _appProvider?.isSimpleMode;
+    if (simpleMode == _lastKnownSimpleMode) return;
+    _lastKnownSimpleMode = simpleMode;
     _scheduleDestinationSync();
   }
 
@@ -409,8 +428,11 @@ class _MessagesTabState extends State<MessagesTab> {
   List<Contact> _buildMentionSuggestions(String query) {
     final contactsProvider = context.read<ContactsProvider>();
     final normalizedQuery = query.trim().toLowerCase();
+    final candidates = context.read<AppProvider>().isSimpleMode
+        ? contactsProvider.favouriteChatContacts
+        : contactsProvider.chatContacts;
     final contacts =
-        contactsProvider.chatContacts.where((contact) {
+        candidates.where((contact) {
           if (normalizedQuery.isEmpty) return true;
           return contact.displayName.toLowerCase().contains(normalizedQuery);
         }).toList()..sort((a, b) {
@@ -488,6 +510,57 @@ class _MessagesTabState extends State<MessagesTab> {
         savedDestination?['publicKey'];
     if (!mounted) return;
     final contactsProvider = context.read<ContactsProvider>();
+
+    if (context.read<AppProvider>().isSimpleMode) {
+      // Simple mode allows the locked channel/room plus direct messages to
+      // favourite contacts. A favourite chosen by the user (override or
+      // saved selection) wins over the locked anchor; anything else falls
+      // back to the locked destination, then to the first favourite. The
+      // fallback is never persisted over the normal-mode preference.
+      final favourites = contactsProvider.favouriteChatContacts;
+      final candidateType = overrideType ?? savedDestination?['type'];
+      final candidateKey =
+          overrideRecipientPublicKeyHex ?? savedDestination?['publicKey'];
+
+      Contact? favourite;
+      if (candidateType ==
+          MessageDestinationPreferences.destinationTypeContact) {
+        favourite = favourites
+            .where((c) => c.publicKeyHex == candidateKey)
+            .firstOrNull;
+      }
+
+      String destinationType;
+      Contact? recipient;
+      if (favourite != null) {
+        destinationType = MessageDestinationPreferences.destinationTypeContact;
+        recipient = favourite;
+      } else if (lockedDestination != null) {
+        destinationType =
+            lockedDestination['type'] ??
+            MessageDestinationPreferences.destinationTypeChannel;
+        recipient = _resolveDestinationRecipient(
+          contactsProvider,
+          destinationType,
+          lockedDestination['publicKey'],
+        );
+      } else {
+        destinationType = MessageDestinationPreferences.destinationTypeContact;
+        recipient = favourites.firstOrNull;
+      }
+
+      setState(() {
+        // Keep the selector usable so favourites stay reachable.
+        _isDestinationLocked = false;
+        _destinationType = destinationType;
+        _selectedRecipient = recipient;
+      });
+
+      _enforceMessageByteLimit();
+      await _loadRegionScope();
+      return;
+    }
+
     final recipient = _resolveDestinationRecipient(
       contactsProvider,
       effectiveType,
@@ -495,7 +568,8 @@ class _MessagesTabState extends State<MessagesTab> {
     );
     final allowsEmptyRecipient =
         effectiveType == MessageDestinationPreferences.destinationTypeAll ||
-        (effectiveType == MessageDestinationPreferences.destinationTypeChannel &&
+        (effectiveType ==
+                MessageDestinationPreferences.destinationTypeChannel &&
             effectivePublicKeyHex == null);
     final shouldFallbackToPublicChannel =
         recipient == null && !allowsEmptyRecipient;
@@ -537,7 +611,8 @@ class _MessagesTabState extends State<MessagesTab> {
     final candidates = switch (type) {
       MessageDestinationPreferences.destinationTypeChannel =>
         contactsProvider.channels,
-      MessageDestinationPreferences.destinationTypeRoom => contactsProvider.rooms,
+      MessageDestinationPreferences.destinationTypeRoom =>
+        contactsProvider.rooms,
       MessageDestinationPreferences.destinationTypeContact =>
         contactsProvider.chatContacts,
       _ => contactsProvider.contacts,
@@ -549,41 +624,82 @@ class _MessagesTabState extends State<MessagesTab> {
   }
 
   /// Show recipient selector bottom sheet
-  void _showRecipientSelector() {
+  Future<void> _showRecipientSelector() async {
     if (_isDestinationLocked) {
       return;
     }
 
     final contactsProvider = context.read<ContactsProvider>();
     final messagesProvider = context.read<MessagesProvider>();
+    final isSimpleMode = context.read<AppProvider>().isSimpleMode;
 
-    final contacts = List<Contact>.from(contactsProvider.chatContacts)
-      ..sort((a, b) {
-        final primary = compareContactsByFavouriteThenLastSeen(a, b);
-        if (primary != 0) {
-          return primary;
-        }
+    // In simple mode the only channel/room offered is the locked anchor, so
+    // the user can return to the team channel after messaging a favourite.
+    Contact? lockedRecipient;
+    String? lockedType;
+    if (isSimpleMode) {
+      final lockedDestination =
+          await MessageDestinationPreferences.getLockedDestination();
+      if (lockedDestination != null) {
+        lockedType =
+            lockedDestination['type'] ??
+            MessageDestinationPreferences.destinationTypeChannel;
+        lockedRecipient = _resolveDestinationRecipient(
+          contactsProvider,
+          lockedType,
+          lockedDestination['publicKey'],
+        );
+      }
+    }
+    if (!mounted) return;
 
-        return compareContactsByDisplayName(a, b);
-      });
-    final rooms = List<Contact>.from(contactsProvider.rooms)
-      ..sort((a, b) {
-        final primary = compareContactsByLastSeen(a, b);
-        if (primary != 0) {
-          return primary;
-        }
+    final contacts =
+        List<Contact>.from(
+          isSimpleMode
+              ? contactsProvider.favouriteChatContacts
+              : contactsProvider.chatContacts,
+        )..sort((a, b) {
+          final primary = compareContactsByFavouriteThenLastSeen(a, b);
+          if (primary != 0) {
+            return primary;
+          }
 
-        return compareContactsByDisplayName(a, b);
-      });
-    final channels = List<Contact>.from(contactsProvider.channels)
-      ..sort((a, b) {
-        final primary = compareContactsByLastSeen(a, b);
-        if (primary != 0) {
-          return primary;
-        }
+          return compareContactsByDisplayName(a, b);
+        });
+    final rooms =
+        isSimpleMode
+              ? <Contact>[
+                  if (lockedRecipient != null &&
+                      lockedType ==
+                          MessageDestinationPreferences.destinationTypeRoom)
+                    lockedRecipient,
+                ]
+              : List<Contact>.from(contactsProvider.rooms)
+          ..sort((a, b) {
+            final primary = compareContactsByLastSeen(a, b);
+            if (primary != 0) {
+              return primary;
+            }
 
-        return compareContactsByDisplayName(a, b);
-      });
+            return compareContactsByDisplayName(a, b);
+          });
+    final channels =
+        isSimpleMode
+              ? <Contact>[
+                  if (lockedRecipient != null &&
+                      lockedType ==
+                          MessageDestinationPreferences.destinationTypeChannel)
+                    lockedRecipient,
+                ]
+              : List<Contact>.from(contactsProvider.channels)
+          ..sort((a, b) {
+            final primary = compareContactsByLastSeen(a, b);
+            if (primary != 0) {
+              return primary;
+            }
+
+            return compareContactsByDisplayName(a, b);
+          });
 
     showModalBottomSheet(
       context: context,
@@ -832,7 +948,10 @@ class _MessagesTabState extends State<MessagesTab> {
     if (_selectedRecipient != null) {
       return _selectedRecipient!.displayName;
     }
-    return 'Public Channel';
+    if (context.read<AppProvider>().isSimpleMode) {
+      return AppLocalizations.of(context)!.noFavouriteContacts;
+    }
+    return AppLocalizations.of(context)!.publicChannel;
   }
 
   Future<void> _sendMessage() async {
@@ -845,13 +964,32 @@ class _MessagesTabState extends State<MessagesTab> {
 
     if (!connectionProvider.deviceInfo.isConnected) {
       if (!mounted) return;
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
     if (_destinationType == MessageDestinationPreferences.destinationTypeAll) {
       if (!mounted) return;
-      ToastLogger.error(context, 'Select a channel, contact, or room first');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.selectDestinationFirst,
+      );
+      return;
+    }
+
+    // Refuse to send if the contact/room destination no longer resolves to a
+    // recipient - never silently redirect private traffic to the public channel.
+    if (_destinationType !=
+            MessageDestinationPreferences.destinationTypeChannel &&
+        _selectedRecipient == null) {
+      if (!mounted) return;
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.recipientNoLongerAvailable,
+      );
       return;
     }
 
@@ -871,35 +1009,27 @@ class _MessagesTabState extends State<MessagesTab> {
           messagesProvider,
           channelIdx,
         );
-      } else if (_selectedRecipient != null) {
-        // Send to contact or room
+      } else {
+        // Send to contact or room (recipient presence already validated above)
         await _sendToRecipient(
           text,
           connectionProvider,
           messagesProvider,
           contactsProvider,
         );
-      } else {
-        // Fallback to public channel if no recipient selected
-        debugPrint(
-          '⚠️ [MessagesTab] No recipient selected, falling back to public channel',
-        );
-        await _sendToChannel(text, connectionProvider, messagesProvider, 0);
       }
 
       _markCurrentDestinationAsRead();
 
       if (!mounted) return;
     } catch (e) {
+      // The placeholder bubble is marked failed by the send helpers, so the
+      // inline retry chip is the recovery path - don't restore the composer.
       if (!mounted) return;
-      if (_textController.text.isEmpty) {
-        _textController.text = text;
-        _textController.selection = TextSelection.collapsed(
-          offset: _textController.text.length,
-        );
-        _focusNode.requestFocus();
-      }
-      ToastLogger.error(context, 'Failed to send: $e');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.failedToSendMessage('$e'),
+      );
     }
   }
 
@@ -936,12 +1066,18 @@ class _MessagesTabState extends State<MessagesTab> {
     messagesProvider.addSentMessage(sentMessage, contact: _selectedRecipient);
 
     // Send to selected channel (with region scope if set)
-    await connectionProvider.sendChannelMessage(
-      channelIdx: channelIdx,
-      text: text,
-      messageId: messageId,
-      floodScopeKey: _channelRegionScopeKey,
-    );
+    try {
+      await connectionProvider.sendChannelMessage(
+        channelIdx: channelIdx,
+        text: text,
+        messageId: messageId,
+        floodScopeKey: _channelRegionScopeKey,
+      );
+    } catch (e) {
+      // Mark the placeholder as failed so the retry chip appears
+      messagesProvider.markMessageFailed(messageId);
+      rethrow;
+    }
   }
 
   /// Send message to contact or room
@@ -979,12 +1115,19 @@ class _MessagesTabState extends State<MessagesTab> {
     messagesProvider.addSentMessage(sentMessage, contact: _selectedRecipient);
 
     // Send message to selected recipient
-    final sentSuccessfully = await connectionProvider.sendTextMessage(
-      contactPublicKey: _selectedRecipient!.publicKey,
-      text: text,
-      messageId: messageId,
-      contact: _selectedRecipient,
-    );
+    final bool sentSuccessfully;
+    try {
+      sentSuccessfully = await connectionProvider.sendTextMessage(
+        contactPublicKey: _selectedRecipient!.publicKey,
+        text: text,
+        messageId: messageId,
+        contact: _selectedRecipient,
+      );
+    } catch (e) {
+      // Mark the placeholder as failed so the retry chip appears
+      messagesProvider.markMessageFailed(messageId);
+      rethrow;
+    }
 
     if (!sentSuccessfully) {
       // Mark message as failed if sending failed
@@ -1027,8 +1170,9 @@ class _MessagesTabState extends State<MessagesTab> {
                   final connectionProvider = context.read<ConnectionProvider>();
                   if (_selectedRecipient != null &&
                       connectionProvider.deviceInfo.isConnected) {
-                    await connectionProvider
-                        .setContactDirect(_selectedRecipient!);
+                    await connectionProvider.setContactDirect(
+                      _selectedRecipient!,
+                    );
                   }
                   await _sendMessage();
                 },
@@ -1042,8 +1186,9 @@ class _MessagesTabState extends State<MessagesTab> {
                   final connectionProvider = context.read<ConnectionProvider>();
                   if (_selectedRecipient != null &&
                       connectionProvider.deviceInfo.isConnected) {
-                    await connectionProvider
-                        .resetPath(_selectedRecipient!.publicKey);
+                    await connectionProvider.resetPath(
+                      _selectedRecipient!.publicKey,
+                    );
                   }
                   await _sendMessage();
                 },
@@ -1062,7 +1207,7 @@ class _MessagesTabState extends State<MessagesTab> {
         _selectedRecipient == null) {
       ToastLogger.warning(
         context,
-        'Tic-Tac-Toe works only in direct messages. Choose a contact first.',
+        AppLocalizations.of(context)!.tictactoeDirectOnly,
       );
       return;
     }
@@ -1071,13 +1216,19 @@ class _MessagesTabState extends State<MessagesTab> {
     final messagesProvider = context.read<MessagesProvider>();
     final contactsProvider = context.read<ContactsProvider>();
     if (!connectionProvider.deviceInfo.isConnected) {
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
     final devicePublicKey = connectionProvider.deviceInfo.publicKey;
     if (devicePublicKey == null || devicePublicKey.length < 6) {
-      ToastLogger.error(context, 'Device key unavailable');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.deviceKeyUnavailable,
+      );
       return;
     }
 
@@ -1115,7 +1266,10 @@ class _MessagesTabState extends State<MessagesTab> {
     final connectionProvider = context.read<ConnectionProvider>();
     final messagesProvider = context.read<MessagesProvider>();
     if (!connectionProvider.deviceInfo.isConnected) {
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -1145,7 +1299,10 @@ class _MessagesTabState extends State<MessagesTab> {
       );
       if (result == null) {
         if (!mounted) return;
-        ToastLogger.error(context, 'Image compression failed');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.imageCompressionFailed,
+        );
         return;
       }
       final compressed = result.bytes;
@@ -1176,7 +1333,10 @@ class _MessagesTabState extends State<MessagesTab> {
 
       if (fragments.isEmpty) {
         if (!mounted) return;
-        ToastLogger.error(context, 'Image fragmentation failed');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.imageFragmentationFailed,
+        );
         return;
       }
 
@@ -1184,7 +1344,10 @@ class _MessagesTabState extends State<MessagesTab> {
       final deviceKey = connectionProvider.deviceInfo.publicKey;
       if (deviceKey == null || deviceKey.length < 6) {
         if (!mounted) return;
-        ToastLogger.error(context, 'Device key unavailable');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.deviceKeyUnavailable,
+        );
         return;
       }
       final envelope = ImageEnvelope(
@@ -1247,13 +1410,19 @@ class _MessagesTabState extends State<MessagesTab> {
         if (!sent) {
           messagesProvider.markMessageFailed(msgId);
           if (!mounted) return;
-          ToastLogger.error(context, 'Failed to announce image');
+          ToastLogger.error(
+            context,
+            AppLocalizations.of(context)!.failedToAnnounceImage,
+          );
           return;
         }
       } else {
         messagesProvider.markMessageFailed(msgId);
         if (!mounted) return;
-        ToastLogger.error(context, 'No recipient selected');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.noRecipientSelected,
+        );
         return;
       }
 
@@ -1282,7 +1451,7 @@ class _MessagesTabState extends State<MessagesTab> {
         messagesProvider.markMessageFailed(failedMessageId);
       }
       if (!mounted) return;
-      ToastLogger.error(context, 'Image send failed');
+      ToastLogger.error(context, AppLocalizations.of(context)!.imageSendFailed);
     } finally {
       if (mounted) setState(() => _isSendingImage = false);
     }
@@ -1306,7 +1475,10 @@ class _MessagesTabState extends State<MessagesTab> {
     debugPrint('🎙️ [Voice] hasPermission=$hasPermission');
     if (!hasPermission) {
       if (!mounted) return;
-      ToastLogger.error(context, 'Microphone permission required for voice');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.microphonePermissionRequiredForVoice,
+      );
       return;
     }
 
@@ -1317,7 +1489,10 @@ class _MessagesTabState extends State<MessagesTab> {
       '🎙️ [Voice] isConnected=${connectionProvider.deviceInfo.isConnected}',
     );
     if (!connectionProvider.deviceInfo.isConnected) {
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -1463,6 +1638,27 @@ class _MessagesTabState extends State<MessagesTab> {
     }
   }
 
+  /// Stop the recorder and discard the captured audio without sending.
+  Future<void> _cancelVoiceRecording() async {
+    if (!_isRecording) return;
+    debugPrint(
+      '🎙️ [Voice] _cancelVoiceRecording: discarding ${_recordedChunks.length} chunks',
+    );
+
+    await _voiceStreamSub?.cancel();
+    _voiceStreamSub = null;
+    await _voiceRecorder.stopCapture();
+    _recordedChunks.clear();
+    _currentVoiceSessionId = null;
+
+    if (!mounted) return;
+    setState(() {
+      _isRecording = false;
+      _isSendingVoice = false;
+    });
+    ToastLogger.info(context, AppLocalizations.of(context)!.recordingDiscarded);
+  }
+
   Future<void> _encodeAndSendAllPackets({
     required List<Int16List> chunks,
     required String sessionId,
@@ -1580,7 +1776,10 @@ class _MessagesTabState extends State<MessagesTab> {
       } else {
         messagesProvider.markMessageFailed(msgId);
         if (!mounted) return;
-        ToastLogger.error(context, 'No recipient selected');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.noRecipientSelected,
+        );
         return;
       }
     } catch (e, st) {
@@ -1684,9 +1883,11 @@ class _MessagesTabState extends State<MessagesTab> {
       builder: (dialogContext) => AlertDialog(
         title: Text(AppLocalizations.of(context)!.sendToPublicChannel),
         content: Text(
-          'You are about to send $mediaType to the Public Channel. '
-          'This is not advised because everyone on the mesh may receive it. '
-          'Choose a private or tagged channel unless this is what you want.',
+          AppLocalizations.of(context)!.publicChannelMediaWarning(
+            mediaType == 'image'
+                ? AppLocalizations.of(context)!.image
+                : AppLocalizations.of(context)!.voice,
+          ),
         ),
         actions: [
           TextButton(
@@ -1773,11 +1974,13 @@ class _MessagesTabState extends State<MessagesTab> {
     bool enabled,
   ) async {
     try {
-      final result = await context.read<AppProvider>().setChannelLocationSharingEnabled(
-        channelIdx,
-        enabled,
-        l10n: AppLocalizations.of(context),
-      );
+      final result = await context
+          .read<AppProvider>()
+          .setChannelLocationSharingEnabled(
+            channelIdx,
+            enabled,
+            l10n: AppLocalizations.of(context),
+          );
       if (!mounted) return;
       ToastLogger.success(context, result.message);
     } catch (error) {
@@ -1792,17 +1995,19 @@ class _MessagesTabState extends State<MessagesTab> {
       if (!mounted) return;
       ToastLogger.error(
         context,
-        'Select a private channel to share your location.',
+        AppLocalizations.of(context)!.selectPrivateChannelToShareLocation,
       );
       return;
     }
 
-    final channelIdx = recipient.publicKey.length > 1 ? recipient.publicKey[1] : 0;
+    final channelIdx = recipient.publicKey.length > 1
+        ? recipient.publicKey[1]
+        : 0;
     if (channelIdx <= 0) {
       if (!mounted) return;
       ToastLogger.error(
         context,
-        'Select a private channel to share your location.',
+        AppLocalizations.of(context)!.selectPrivateChannelToShareLocation,
       );
       return;
     }
@@ -1812,7 +2017,10 @@ class _MessagesTabState extends State<MessagesTab> {
           .read<AppProvider>()
           .getChannelLocationSharingState(channelIdx);
       if (!mounted) return;
-      await _setSelectedChannelLocationSharing(channelIdx, !sharingState.isSharing);
+      await _setSelectedChannelLocationSharing(
+        channelIdx,
+        !sharingState.isSharing,
+      );
     } catch (error) {
       if (!mounted) return;
       ToastLogger.error(context, _locationSharingErrorMessage(error));
@@ -1823,9 +2031,9 @@ class _MessagesTabState extends State<MessagesTab> {
     final privateChannelIdx = _selectedPrivateChannelIdx();
     final locationSharingStateFuture = privateChannelIdx == null
         ? null
-        : context
-              .read<AppProvider>()
-              .getChannelLocationSharingState(privateChannelIdx);
+        : context.read<AppProvider>().getChannelLocationSharingState(
+            privateChannelIdx,
+          );
     showModalBottomSheet(
       context: context,
       showDragHandle: true,
@@ -1849,6 +2057,21 @@ class _MessagesTabState extends State<MessagesTab> {
               }),
             ),
             _ComposerActionTile(
+              icon: Icons.campaign_rounded,
+              title: l10n.sendAdvert,
+              color: theme.colorScheme.primary,
+              onTap: () => runAction(() async {
+                await triggerAdvertFeedback(context);
+                if (!mounted) return;
+                final mode = await showAdvertModeSheet(context);
+                if (!mounted || mode == null) return;
+                await advertiseDevice(
+                  context,
+                  floodMode: mode == AdvertMode.flood,
+                );
+              }),
+            ),
+            _ComposerActionTile(
               icon: Icons.add_location_alt_rounded,
               title: l10n.sendSarMarker,
               color: const Color(0xFFB45309),
@@ -1863,8 +2086,8 @@ class _MessagesTabState extends State<MessagesTab> {
                     ? Icons.location_off_rounded
                     : Icons.share_location_rounded,
                 title: sharingState?.isSharing == true
-                    ? 'Stop sharing my location'
-                    : 'Share my location',
+                    ? l10n.stopSharingMyLocation
+                    : l10n.shareMyLocation,
                 color: const Color(0xFF0F766E),
                 onTap: () => runAction(() async {
                   await _handleChannelLocationSharingAction();
@@ -1873,7 +2096,7 @@ class _MessagesTabState extends State<MessagesTab> {
             if (_voiceSupported)
               _ComposerActionTile(
                 icon: _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
-                title: _isRecording ? 'Stop recording' : 'Record voice',
+                title: _isRecording ? l10n.stopRecording : l10n.recordVoice,
                 color: const Color(0xFF7C3AED),
                 enabled: !_isSendingVoice,
                 busy: _isSendingVoice,
@@ -1947,7 +2170,7 @@ class _MessagesTabState extends State<MessagesTab> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'More actions',
+                      l10n.moreActions,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.w700,
                       ),
@@ -2060,7 +2283,9 @@ class _MessagesTabState extends State<MessagesTab> {
                           controller: searchController,
                           autofocus: true,
                           decoration: InputDecoration(
-                            hintText: AppLocalizations.of(context)!.searchInCurrentFilter,
+                            hintText: AppLocalizations.of(
+                              context,
+                            )!.searchInCurrentFilter,
                             prefixIcon: const Icon(Icons.search),
                             suffixIcon: searchController.text.isEmpty
                                 ? null
@@ -2083,8 +2308,12 @@ class _MessagesTabState extends State<MessagesTab> {
                             ? Center(
                                 child: Text(
                                   query.isEmpty
-                                      ? 'No messages in this filter'
-                                      : 'No matches in this filter',
+                                      ? AppLocalizations.of(
+                                          context,
+                                        )!.noMessagesInFilter
+                                      : AppLocalizations.of(
+                                          context,
+                                        )!.noMatchesInFilter,
                                 ),
                               )
                             : ListView.separated(
@@ -2098,7 +2327,7 @@ class _MessagesTabState extends State<MessagesTab> {
                                           true
                                       ? message.senderName!
                                       : message.isSentMessage
-                                      ? 'You'
+                                      ? AppLocalizations.of(context)!.you
                                       : _getDestinationLabel();
 
                                   return ListTile(
@@ -2163,11 +2392,7 @@ class _MessagesTabState extends State<MessagesTab> {
                   border: Border.all(color: Colors.white, width: 1.5),
                 ),
                 alignment: Alignment.center,
-                child: Icon(
-                  Icons.location_pin,
-                  size: 9,
-                  color: Colors.white,
-                ),
+                child: Icon(Icons.location_pin, size: 9, color: Colors.white),
               ),
             ),
         ],
@@ -2195,7 +2420,10 @@ class _MessagesTabState extends State<MessagesTab> {
 
     if (!connectionProvider.deviceInfo.isConnected) {
       if (!mounted) return;
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -2203,7 +2431,7 @@ class _MessagesTabState extends State<MessagesTab> {
       if (!mounted) return;
       ToastLogger.error(
         context,
-        'Please select a destination to send SAR marker',
+        AppLocalizations.of(context)!.pleaseSelectADestinationToSendSarMarker,
       );
       return;
     }
@@ -2215,9 +2443,12 @@ class _MessagesTabState extends State<MessagesTab> {
           'S:$emoji:${colorIndex.toString()}:${position.latitude.toStringAsFixed(5)},${position.longitude.toStringAsFixed(5)}:$name';
 
       if (sendToAllContacts) {
-        // Send to all chat contacts (ContactType.chat)
+        // Send to all chat contacts (ContactType.chat); in simple mode only
+        // favourite contacts are reachable.
         final contactsProvider = context.read<ContactsProvider>();
-        final chatContacts = contactsProvider.chatContacts;
+        final chatContacts = context.read<AppProvider>().isSimpleMode
+            ? contactsProvider.favouriteChatContacts
+            : contactsProvider.chatContacts;
 
         if (chatContacts.isEmpty) {
           if (!mounted) return;
@@ -2392,11 +2623,17 @@ class _MessagesTabState extends State<MessagesTab> {
         }
 
         if (!mounted) return;
-        ToastLogger.success(context, 'SAR marker sent to room');
+        ToastLogger.success(
+          context,
+          AppLocalizations.of(context)!.sarMarkerSentToRoom,
+        );
       }
     } catch (e) {
       if (!mounted) return;
-      ToastLogger.error(context, 'Failed to send SAR marker: $e');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.failedToSendSarMarker('$e'),
+      );
     }
   }
 
@@ -2407,7 +2644,10 @@ class _MessagesTabState extends State<MessagesTab> {
 
     if (!connectionProvider.deviceInfo.isConnected) {
       if (!mounted) return;
-      ToastLogger.warning(context, 'Not connected - cannot sync messages');
+      ToastLogger.warning(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -2415,11 +2655,15 @@ class _MessagesTabState extends State<MessagesTab> {
       debugPrint(
         '🔄 [MessagesTab] Manual refresh triggered - syncing messages',
       );
+      await connectionProvider.syncAllMessages(force: true);
       if (!mounted) return;
     } catch (e) {
       debugPrint('❌ [MessagesTab] Sync error: $e');
       if (!mounted) return;
-      ToastLogger.error(context, 'Sync failed: $e');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.syncFailed('$e'),
+      );
     }
   }
 
@@ -2639,6 +2883,7 @@ class _MessagesTabState extends State<MessagesTab> {
                   onShowRecipientSelector: _showRecipientSelector,
                   onStartVoiceRecording: _startVoiceRecording,
                   onStopAndSendVoice: _stopAndSendVoice,
+                  onCancelVoiceRecording: _cancelVoiceRecording,
                   onSendMessage: _sendMessage,
                   onLongPressSend: _isContactDestination()
                       ? _showSendModeSheet

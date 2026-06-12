@@ -2919,6 +2919,19 @@ class AppLocalizationsUk extends AppLocalizations {
       'Розмір, стиснення та попередній перегляд';
 
   @override
+  String get simpleMode => 'Простий режим';
+
+  @override
+  String get simpleModeDescription => 'Лише чат і карта з обраними контактами';
+
+  @override
+  String get simpleModeRequiresLockedDestination =>
+      'Спочатку увімкніть «Зафіксувати призначення» з каналом, щоб використовувати простий режим';
+
+  @override
+  String get noFavouriteContacts => 'Немає обраних контактів';
+
+  @override
   String get skip => 'Пропустити';
 
   @override
@@ -3029,4 +3042,415 @@ class AppLocalizationsUk extends AppLocalizations {
 
   @override
   String get regionScopeCleared => 'Область регіону очищена';
+
+  @override
+  String get selectDestinationFirst =>
+      'Спершу виберіть канал, контакт або кімнату';
+
+  @override
+  String get recipientNoLongerAvailable => 'Одержувач більше недоступний';
+
+  @override
+  String failedToSendMessage(String error) {
+    return 'Не вдалося надіслати: $error';
+  }
+
+  @override
+  String get tictactoeDirectOnly =>
+      'Хрестики-нулики працюють лише в особистих повідомленнях. Спершу виберіть контакт.';
+
+  @override
+  String get deviceKeyUnavailable => 'Ключ пристрою недоступний';
+
+  @override
+  String get imageCompressionFailed => 'Не вдалося стиснути зображення';
+
+  @override
+  String get imageFragmentationFailed =>
+      'Не вдалося розділити зображення на фрагменти';
+
+  @override
+  String get failedToAnnounceImage => 'Не вдалося анонсувати зображення';
+
+  @override
+  String get noRecipientSelected => 'Одержувача не вибрано';
+
+  @override
+  String get imageSendFailed => 'Не вдалося надіслати зображення';
+
+  @override
+  String get microphonePermissionRequiredForVoice =>
+      'Для голосових повідомлень потрібен дозвіл на мікрофон';
+
+  @override
+  String get recordingDiscarded => 'Запис відхилено';
+
+  @override
+  String publicChannelMediaWarning(String mediaType) {
+    return 'Ви збираєтеся надіслати $mediaType в публічний канал. Це не рекомендується: отримати це може будь-хто в mesh-мережі. Виберіть приватний або тегований канал, якщо тільки це не те, що ви хочете.';
+  }
+
+  @override
+  String get selectPrivateChannelToShareLocation =>
+      'Виберіть приватний канал, щоб поділитися місцезнаходженням.';
+
+  @override
+  String get stopSharingMyLocation => 'Припинити ділитися місцезнаходженням';
+
+  @override
+  String get shareMyLocation => 'Поділитися місцезнаходженням';
+
+  @override
+  String get stopRecording => 'Зупинити запис';
+
+  @override
+  String get recordVoice => 'Записати голосове повідомлення';
+
+  @override
+  String get moreActions => 'Інші дії';
+
+  @override
+  String get noMessagesInFilter => 'У цьому фільтрі немає повідомлень';
+
+  @override
+  String get noMatchesInFilter => 'У цьому фільтрі немає збігів';
+
+  @override
+  String syncFailed(String error) {
+    return 'Помилка синхронізації: $error';
+  }
+
+  @override
+  String get invalidLink => 'Недійсне посилання';
+
+  @override
+  String get cannotOpenLink => 'Не вдається відкрити посилання';
+
+  @override
+  String get failedToOpenLink => 'Не вдалося відкрити посилання';
+
+  @override
+  String get failedToResendMessage =>
+      'Не вдалося повторно надіслати повідомлення';
+
+  @override
+  String retryFailed(String error) {
+    return 'Повторна спроба не вдалася: $error';
+  }
+
+  @override
+  String get deleteDrawingAndMessage => 'Видалити рисунок і повідомлення';
+
+  @override
+  String get lastEchoRelay => 'Останнє відлуння: ретранслятор';
+
+  @override
+  String get lastEchoPath => 'Останнє відлуння: шлях';
+
+  @override
+  String get lastEchoBytesReport => 'Останнє відлуння: звіт про байти';
+
+  @override
+  String get noGpsCoordinatesAvailable => 'Координати GPS недоступні';
+
+  @override
+  String get notASarMarker => 'Це не маркер SAR';
+
+  @override
+  String failedToSaveTemplate(String error) {
+    return 'Не вдалося зберегти шаблон: $error';
+  }
+
+  @override
+  String get drawingNotFound => 'Рисунок не знайдено';
+
+  @override
+  String get unknownDrawingType => 'Невідомий тип рисунка';
+
+  @override
+  String get customMapMarker => 'Власний маркер карти';
+
+  @override
+  String customMapPointLabel(String point) {
+    return 'Точка: $point';
+  }
+
+  @override
+  String mapIdLabel(String id) {
+    return 'ID карти: $id';
+  }
+
+  @override
+  String get cannotFetchVoice => 'Не вдається отримати голосове повідомлення';
+
+  @override
+  String get senderContactUnknown =>
+      'Контакт відправника невідомий. Спершу синхронізуйте контакти.';
+
+  @override
+  String get senderRouteUnknown =>
+      'Маршрут відправника невідомий. Спершу синхронізуйте контакти/шлях.';
+
+  @override
+  String messageTooFar(String hops, String maxHops) {
+    return 'Повідомлення задалеко ($hops хопів, макс. $maxHops).';
+  }
+
+  @override
+  String get senderRouteNoPathResponse =>
+      'Маршрут відправника не відповів на перевірку шляху. Синхронізуйте контакти/шлях і спробуйте ще раз.';
+
+  @override
+  String get senderRouteNoRawResponse =>
+      'Маршрут відправника не відповів на raw-транспортному шляху.';
+
+  @override
+  String voiceFetchOverHops(String hops) {
+    return 'Отримання голосу через $hops хопів може зайняти час.';
+  }
+
+  @override
+  String get voiceReceiveCanceled =>
+      'Приймання голосового повідомлення скасовано';
+
+  @override
+  String get fetchingMissingVoiceFragments =>
+      'Отримання відсутніх фрагментів голосу';
+
+  @override
+  String get receivingVoice => 'Приймання голосу';
+
+  @override
+  String get cannotFetchImage => 'Не вдається отримати зображення';
+
+  @override
+  String imageFetchOverHops(String hops) {
+    return 'Отримання зображення через $hops хопів може зайняти час.';
+  }
+
+  @override
+  String get imageAlreadyBeingReceived => 'Зображення вже приймається';
+
+  @override
+  String get loadImage => 'Завантажити зображення';
+
+  @override
+  String get imageFetchFailedToSendRequest =>
+      'Не вдалося надіслати запит на зображення';
+
+  @override
+  String get imageUnavailable => 'Зображення зараз недоступне';
+
+  @override
+  String get imageFetchTimedOut => 'Час очікування зображення минув';
+
+  @override
+  String get imageReceiveCanceled => 'Приймання зображення скасовано';
+
+  @override
+  String get closeImagePreview => 'Закрити перегляд зображення';
+
+  @override
+  String get recordingReleaseToSend => 'Запис... відпустіть, щоб надіслати';
+
+  @override
+  String get sendingVoice => 'Надсилання голосу...';
+
+  @override
+  String get sendLongPressToRecordVoice =>
+      'Надіслати (утримуйте для запису голосу)';
+
+  @override
+  String get discardRecording => 'Відхилити запис';
+
+  @override
+  String hopCount(num count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count хопа',
+      many: '$count хопів',
+      few: '$count хопи',
+      one: '$count хоп',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get channelsSectionDescription =>
+      'Широкомовні канали для mesh-трафіку поблизу';
+
+  @override
+  String get roomsSectionDescription =>
+      'Спільні простори для постійної координації команди';
+
+  @override
+  String get contactsSectionDescription =>
+      'Люди та пристрої в прямій досяжності';
+
+  @override
+  String get noRecentChatters => 'Немає нещодавніх співрозмовників';
+
+  @override
+  String get public => 'Публічний';
+
+  @override
+  String get failedToSendTicTacToeMove =>
+      'Не вдалося надіслати хід у хрестики-нулики';
+
+  @override
+  String get youWon => 'Ви перемогли';
+
+  @override
+  String get opponentWon => 'Переміг суперник';
+
+  @override
+  String get gameDraw => 'Нічия';
+
+  @override
+  String get yourTurn => 'Ваш хід';
+
+  @override
+  String get opponentTurn => 'Хід суперника';
+
+  @override
+  String get pleaseEnterValidCoordinates => 'Введіть коректні координати';
+
+  @override
+  String get locationNotAvailable => 'Місцезнаходження недоступне';
+
+  @override
+  String get customCaveMapPoint => 'Власна точка карти печери';
+
+  @override
+  String get mapPoint => 'Точка карти';
+
+  @override
+  String get fetchingMissingImageFragments => 'Отримання відсутніх фрагментів…';
+
+  @override
+  String get loadingImage => 'Завантаження…';
+
+  @override
+  String get receivingImage => 'Приймання…';
+
+  @override
+  String get tapToLoad => 'Торкніться, щоб завантажити';
+
+  @override
+  String get connectDevice => 'Підключити пристрій';
+
+  @override
+  String get chooseTransportSubtitle =>
+      'Виберіть транспорт: Bluetooth, WiFi або послідовний порт';
+
+  @override
+  String get ble => 'BLE';
+
+  @override
+  String get network => 'Мережа';
+
+  @override
+  String get serial => 'Послідовний порт';
+
+  @override
+  String get scan => 'Сканувати';
+
+  @override
+  String get pressScanToSearchForDevices =>
+      'Натисніть «Сканувати», щоб знайти пристрої поблизу';
+
+  @override
+  String failedToConnectToDevice(String name) {
+    return 'Не вдалося підключитися до $name';
+  }
+
+  @override
+  String get unknownDevice => 'Невідомий пристрій';
+
+  @override
+  String get showingCachedResultsTapRefresh =>
+      'Показано кешовані результати. Натисніть «Оновити», щоб пересканувати.';
+
+  @override
+  String scanningLocalNetworkOnPort(int port) {
+    return 'Сканування локальної мережі на наявність WiFi-пристроїв MeshCore на порту $port';
+  }
+
+  @override
+  String get cancelScanAndAddServer => 'Скасувати сканування та додати сервер';
+
+  @override
+  String get addServer => 'Додати сервер';
+
+  @override
+  String scanningProgressIps(int scanned, String total) {
+    return 'Сканування... $scanned/$total IP-адрес';
+  }
+
+  @override
+  String get cancelAndEnterManually => 'Скасувати та ввести вручну';
+
+  @override
+  String get noRecentOrDiscoveredServers =>
+      'Поки немає нещодавніх або виявлених серверів';
+
+  @override
+  String get recentlyUsed => 'Нещодавно використані';
+
+  @override
+  String get connecting => 'Підключення...';
+
+  @override
+  String get discoveredOnThisNetwork => 'Виявлені в цій мережі';
+
+  @override
+  String serverNoLongerAvailable(String host, int port) {
+    return 'Сервер $host:$port більше недоступний. Виконайте сканування ще раз, щоб знайти активні сервери.';
+  }
+
+  @override
+  String failedToConnectToHost(String host, int port) {
+    return 'Не вдалося підключитися до $host:$port';
+  }
+
+  @override
+  String get enterValidIpAddress => 'Введіть коректну IP-адресу';
+
+  @override
+  String get enterValidTcpPort => 'Введіть коректний TCP-порт';
+
+  @override
+  String get ipAddress => 'IP-адреса';
+
+  @override
+  String get tcpPort => 'TCP-порт';
+
+  @override
+  String get customServerPort => 'Власний порт сервера';
+
+  @override
+  String get chat => 'Чат';
+
+  @override
+  String get restoringPreviousLink => 'Відновлення попереднього підключення';
+
+  @override
+  String get noDeviceConnected => 'Немає підключеного пристрою';
+
+  @override
+  String get sendAdvert => 'Надіслати мій контакт';
+
+  @override
+  String get advertMode => 'Надіслати мій контакт';
+
+  @override
+  String get advertModeSubtitle =>
+      'Виберіть, як далеко мають поширитися ваші контактні дані.';
+
+  @override
+  String get floodAdvertSent => 'Контакт надіслано по всій mesh-мережі';
+
+  @override
+  String get directAdvertSent => 'Контакт надіслано пристроям поблизу';
 }

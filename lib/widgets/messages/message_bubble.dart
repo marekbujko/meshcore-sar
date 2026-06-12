@@ -179,7 +179,7 @@ class _MessageBubbleState extends State<MessageBubble> {
   Future<void> _openMessageLink(String rawUrl) async {
     final uri = _parseMessageLink(rawUrl);
     if (uri == null) {
-      ToastLogger.error(context, 'Invalid link');
+      ToastLogger.error(context, AppLocalizations.of(context)!.invalidLink);
       return;
     }
 
@@ -200,7 +200,10 @@ class _MessageBubbleState extends State<MessageBubble> {
         if (!mounted) {
           return;
         }
-        ToastLogger.error(context, 'Cannot open link');
+        ToastLogger.error(
+          context,
+          AppLocalizations.of(context)!.cannotOpenLink,
+        );
         return;
       }
 
@@ -209,7 +212,10 @@ class _MessageBubbleState extends State<MessageBubble> {
       if (!mounted) {
         return;
       }
-      ToastLogger.error(context, 'Failed to open link');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.failedToOpenLink,
+      );
     }
   }
 
@@ -328,7 +334,10 @@ class _MessageBubbleState extends State<MessageBubble> {
     final messagesProvider = context.read<MessagesProvider>();
 
     if (!connectionProvider.deviceInfo.isConnected) {
-      ToastLogger.error(context, 'Not connected to device');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.notConnectedToDevice,
+      );
       return;
     }
 
@@ -380,7 +389,10 @@ class _MessageBubbleState extends State<MessageBubble> {
 
         if (!sentSuccessfully) {
           messagesProvider.markMessageFailed(failedMessage.id);
-          ToastLogger.error(context, 'Failed to resend message');
+          ToastLogger.error(
+            context,
+            AppLocalizations.of(context)!.failedToResendMessage,
+          );
         }
       } else if (failedMessage.messageType == MessageType.channel) {
         final prepared = messagesProvider.prepareMessageForRetry(
@@ -401,7 +413,10 @@ class _MessageBubbleState extends State<MessageBubble> {
       }
     } catch (e) {
       if (!context.mounted) return;
-      ToastLogger.error(context, 'Retry failed: $e');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.retryFailed('$e'),
+      );
     }
   }
 
@@ -441,10 +456,7 @@ class _MessageBubbleState extends State<MessageBubble> {
               onTap: () {
                 Clipboard.setData(ClipboardData(text: widget.message.text));
                 Navigator.pop(sheetContext);
-                ToastLogger.success(
-                  parentContext,
-                  l10n.textCopiedToClipboard,
-                );
+                ToastLogger.success(parentContext, l10n.textCopiedToClipboard);
               },
             ),
             // Save as Template option (only for SAR markers without existing template)
@@ -508,14 +520,17 @@ class _MessageBubbleState extends State<MessageBubble> {
                   _copyDrawingCoordinates(parentContext);
                 },
               ),
-            // Hide from map option (only for drawing messages)
+            // Delete drawing & message option (only for drawing messages)
             if (widget.message.isDrawing && widget.message.drawingId != null)
               ListTile(
-                leading: Icon(Icons.visibility_off),
-                title: Text(l10n.hideFromMap),
+                leading: Icon(Icons.delete_forever, color: Colors.red),
+                title: Text(
+                  l10n.deleteDrawingAndMessage,
+                  style: const TextStyle(color: Colors.red),
+                ),
                 onTap: () {
                   Navigator.pop(sheetContext);
-                  _hideDrawingFromMap(parentContext);
+                  _showDeleteDrawingConfirmation(parentContext);
                 },
               ),
             // Details option
@@ -1013,7 +1028,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                             if (lastEchoRelayHash != null)
                               _detailRow(
                                 sheetContext,
-                                label: 'Last echo relay',
+                                label: l10n.lastEchoRelay,
                                 value: lastEchoRelayHash,
                                 onCopy: () =>
                                     copyField(sheetContext, lastEchoRelayHash),
@@ -1022,15 +1037,14 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 case final echoPath?)
                               _detailRow(
                                 sheetContext,
-                                label: 'Last echo path',
+                                label: l10n.lastEchoPath,
                                 value: echoPath,
-                                onCopy: () =>
-                                    copyField(sheetContext, echoPath),
+                                onCopy: () => copyField(sheetContext, echoPath),
                               ),
                             if (lastEchoBytesReport != null)
                               _detailRow(
                                 sheetContext,
-                                label: 'Last echo bytes report',
+                                label: l10n.lastEchoBytesReport,
                                 value: lastEchoBytesReport,
                                 onCopy: () => copyField(
                                   sheetContext,
@@ -1153,10 +1167,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                                 sheetContext,
                                 label: l10n.recipientKey,
                                 value: recipientPrefixHex,
-                                onCopy: () => copyField(
-                                  sheetContext,
-                                  recipientPrefixHex,
-                                ),
+                                onCopy: () =>
+                                    copyField(sheetContext, recipientPrefixHex),
                               ),
                           ],
                         ),
@@ -1393,9 +1405,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     if (isOwnMessage) {
       final advLat = connectionProvider.deviceInfo.advLat;
       final advLon = connectionProvider.deviceInfo.advLon;
-      if (advLat != null &&
-          advLon != null &&
-          (advLat != 0 || advLon != 0)) {
+      if (advLat != null && advLon != null && (advLat != 0 || advLon != 0)) {
         return MessageContactLocation(
           location: LatLng(advLat / 1e6, advLon / 1e6),
           source: 'shared',
@@ -1407,10 +1417,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       final currentPosition = LocationTrackingService().currentPosition;
       if (currentPosition != null) {
         return MessageContactLocation(
-          location: LatLng(
-            currentPosition.latitude,
-            currentPosition.longitude,
-          ),
+          location: LatLng(currentPosition.latitude, currentPosition.longitude),
           source: 'shared',
           capturedAt: currentPosition.timestamp,
           sourceTimestamp: currentPosition.timestamp,
@@ -1420,14 +1427,14 @@ class _MessageBubbleState extends State<MessageBubble> {
 
     final contactLocation = senderContact?.displayLocation;
     if (contactLocation != null) {
-      final source =
-          senderContact?.telemetry?.gpsLocation != null
-              ? 'telemetry'
-              : 'advert';
+      final source = senderContact?.telemetry?.gpsLocation != null
+          ? 'telemetry'
+          : 'advert';
       return MessageContactLocation(
         location: contactLocation,
         source: source,
-        capturedAt: senderContact?.locationUpdateTime ?? widget.message.receivedAt,
+        capturedAt:
+            senderContact?.locationUpdateTime ?? widget.message.receivedAt,
         sourceTimestamp: senderContact?.locationUpdateTime,
       );
     }
@@ -1656,7 +1663,11 @@ class _MessageBubbleState extends State<MessageBubble> {
       context: context,
       builder: (context) => AlertDialog(
         title: Text(l10n.deleteMessage),
-        content: Text(l10n.deleteMessageConfirmation),
+        content: Text(
+          widget.message.isDrawing && widget.message.drawingId != null
+              ? '${l10n.deleteMessageConfirmation} This will also remove the linked drawing from the map.'
+              : l10n.deleteMessageConfirmation,
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -1686,7 +1697,10 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   void _shareLocation(BuildContext context) {
     if (widget.message.sarGpsCoordinates == null) {
-      ToastLogger.error(context, 'No GPS coordinates available');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.noGpsCoordinatesAvailable,
+      );
       return;
     }
 
@@ -1731,7 +1745,7 @@ class _MessageBubbleState extends State<MessageBubble> {
 
   Future<void> _saveAsTemplate(BuildContext context) async {
     if (!widget.message.isSarMarker) {
-      ToastLogger.error(context, 'Not a SAR marker');
+      ToastLogger.error(context, AppLocalizations.of(context)!.notASarMarker);
       return;
     }
 
@@ -1764,7 +1778,10 @@ class _MessageBubbleState extends State<MessageBubble> {
     } catch (e) {
       debugPrint('Error saving template: $e');
       if (!context.mounted) return;
-      ToastLogger.error(context, 'Failed to save template: $e');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.failedToSaveTemplate('$e'),
+      );
     }
   }
 
@@ -1780,7 +1797,7 @@ class _MessageBubbleState extends State<MessageBubble> {
     final drawing = drawingProvider.getDrawingById(widget.message.drawingId!);
 
     if (drawing == null) {
-      ToastLogger.error(context, 'Drawing not found');
+      ToastLogger.error(context, AppLocalizations.of(context)!.drawingNotFound);
       return;
     }
 
@@ -1798,7 +1815,10 @@ class _MessageBubbleState extends State<MessageBubble> {
     } else if (drawing is RectangleDrawing) {
       coordinatesText = drawing.corners.map(formatPoint).join('\n');
     } else {
-      ToastLogger.error(context, 'Unknown drawing type');
+      ToastLogger.error(
+        context,
+        AppLocalizations.of(context)!.unknownDrawingType,
+      );
       return;
     }
 
@@ -1809,19 +1829,41 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
-  void _hideDrawingFromMap(BuildContext context) {
+  void _showDeleteDrawingConfirmation(BuildContext context) {
     if (widget.message.drawingId == null) return;
 
-    final drawingProvider = context.read<DrawingProvider>();
-    final messagesProvider = context.read<MessagesProvider>();
+    final l10n = AppLocalizations.of(context)!;
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.deleteDrawing),
+        content: Text(
+          '${l10n.deleteMessageConfirmation} This will also remove the drawing from the map.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () {
+              final drawingProvider = context.read<DrawingProvider>();
+              final messagesProvider = context.read<MessagesProvider>();
 
-    // Remove the drawing from map and delete the message
-    drawingProvider.removeDrawingAndMessage(
-      widget.message.drawingId!,
-      messagesProvider,
+              // Remove the drawing from map and delete the message
+              drawingProvider.removeDrawingAndMessage(
+                widget.message.drawingId!,
+                messagesProvider,
+              );
+
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(l10n.delete),
+          ),
+        ],
+      ),
     );
-
-    ToastLogger.success(context, 'Drawing removed from map');
   }
 
   Color _getMessageBubbleColor(
@@ -1899,7 +1941,7 @@ class _MessageBubbleState extends State<MessageBubble> {
       return 'Direct (raw: ${message.pathLen})';
     }
     if (message.pathLen >= 255) return 'Unknown (raw: ${message.pathLen})';
-    return hopDisplayLabel(message);
+    return '${message.pathLen} hop${message.pathLen == 1 ? '' : 's'}';
   }
 
   String? _retryCauseLabel(Message message) {
@@ -2600,7 +2642,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                                   const SizedBox(width: 6),
                                   Expanded(
                                     child: Text(
-                                      'Custom map marker',
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.customMapMarker,
                                       style: Theme.of(context)
                                           .textTheme
                                           .labelMedium
@@ -2613,7 +2657,11 @@ class _MessageBubbleState extends State<MessageBubble> {
                               ),
                               const SizedBox(height: 6),
                               Text(
-                                'Point: ${message.sarCustomMapPoint!.latitude.toStringAsFixed(0)}, ${message.sarCustomMapPoint!.longitude.toStringAsFixed(0)}',
+                                AppLocalizations.of(
+                                  context,
+                                )!.customMapPointLabel(
+                                  '${message.sarCustomMapPoint!.latitude.toStringAsFixed(0)}, ${message.sarCustomMapPoint!.longitude.toStringAsFixed(0)}',
+                                ),
                                 style: Theme.of(context).textTheme.labelMedium
                                     ?.copyWith(
                                       fontFamily: 'monospace',
@@ -2625,7 +2673,9 @@ class _MessageBubbleState extends State<MessageBubble> {
                                   message.sarCustomMapId!.isNotEmpty) ...[
                                 const SizedBox(height: 6),
                                 Text(
-                                  'Map ID: ${message.sarCustomMapId}',
+                                  AppLocalizations.of(
+                                    context,
+                                  )!.mapIdLabel(message.sarCustomMapId!),
                                   style: Theme.of(context).textTheme.labelMedium
                                       ?.copyWith(
                                         fontFamily: 'monospace',
@@ -2932,7 +2982,10 @@ class _MessageBubbleState extends State<MessageBubble> {
                   ),
                 ]
                 // Show single message delivery status
+                // Channel messages only show transient states (sending/failed);
+                // delivered/ACK states don't exist for channels
                 else if (!message.isChannelMessage ||
+                    message.deliveryStatus == MessageDeliveryStatus.sending ||
                     message.deliveryStatus == MessageDeliveryStatus.failed)
                   Row(
                     mainAxisSize: MainAxisSize.max,
@@ -2943,9 +2996,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                         Icon(
                           getDeliveryStatusIcon(message.deliveryStatus),
                           size: 12,
-                          color: getDeliveryStatusColor(
-                            message.deliveryStatus,
-                          ),
+                          color: getDeliveryStatusColor(message.deliveryStatus),
                         ),
                         const SizedBox(width: 3),
                         Expanded(

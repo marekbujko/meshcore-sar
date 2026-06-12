@@ -566,490 +566,544 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.layers),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      AppLocalizations.of(context)!.selectMapLayer,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.layers),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        AppLocalizations.of(context)!.selectMapLayer,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              const TabBar(
+                tabs: [
+                  Tab(icon: Icon(Icons.layers), text: 'Layers'),
+                  Tab(icon: Icon(Icons.download), text: 'Download'),
+                  Tab(icon: Icon(Icons.offline_pin), text: 'Cached'),
                 ],
               ),
-            ),
-            const Divider(),
-            const TabBar(
-              tabs: [
-                Tab(icon: Icon(Icons.layers), text: 'Layers'),
-                Tab(icon: Icon(Icons.download), text: 'Download'),
-                Tab(icon: Icon(Icons.offline_pin), text: 'Cached'),
-              ],
-            ),
-            const Divider(height: 1),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  ListView(
-                    children: [
-                      Consumer<MapProvider>(
-                    builder: (context, mapProvider, _) {
-                      final customMapConfig = mapProvider.customMapConfig;
-                      if (customMapConfig == null) {
-                        return const SizedBox.shrink();
-                      }
+              const Divider(height: 1),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    ListView(
+                      children: [
+                        Consumer<MapProvider>(
+                          builder: (context, mapProvider, _) {
+                            final customMapConfig = mapProvider.customMapConfig;
+                            if (customMapConfig == null) {
+                              return const SizedBox.shrink();
+                            }
 
-                      return Column(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            child: Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Saved maps',
-                                style: Theme.of(context).textTheme.labelLarge
-                                    ?.copyWith(color: Colors.grey[600]),
-                              ),
-                            ),
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Align(
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      'Saved maps',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelLarge
+                                          ?.copyWith(color: Colors.grey[600]),
+                                    ),
+                                  ),
+                                ),
+                                ListTile(
+                                  leading: mapProvider.isUsingCustomMap
+                                      ? const Icon(
+                                          Icons.check_circle,
+                                          color: Colors.green,
+                                        )
+                                      : const Icon(
+                                          Icons.radio_button_unchecked,
+                                        ),
+                                  title: Text(customMapConfig.displayName),
+                                  subtitle: Text(
+                                    'Custom picture map • Map ID ${customMapConfig.mapId}',
+                                  ),
+                                  onTap: () async {
+                                    await mapProvider.enterCustomMapMode();
+                                    if (!context.mounted) {
+                                      return;
+                                    }
+                                    Navigator.pop(context);
+                                  },
+                                ),
+                                const Divider(),
+                              ],
+                            );
+                          },
+                        ),
+                        // Online layers section
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 8,
                           ),
-                          ListTile(
-                            leading: mapProvider.isUsingCustomMap
+                          child: Text(
+                            AppLocalizations.of(context)!.onlineLayers,
+                            style: Theme.of(context).textTheme.labelLarge
+                                ?.copyWith(color: Colors.grey[600]),
+                          ),
+                        ),
+                        ...MapLayer.allLayers.map(
+                          (layer) => ListTile(
+                            leading:
+                                !rootContext
+                                        .read<MapProvider>()
+                                        .isUsingCustomMap &&
+                                    _currentLayer == layer
                                 ? const Icon(
                                     Icons.check_circle,
                                     color: Colors.green,
                                   )
                                 : const Icon(Icons.radio_button_unchecked),
-                            title: Text(customMapConfig.displayName),
-                            subtitle: Text(
-                              'Custom picture map • Map ID ${customMapConfig.mapId}',
-                            ),
+                            title: Text(layer.getLocalizedName(context)),
+                            subtitle: Text(layer.attribution),
                             onTap: () async {
-                              await mapProvider.enterCustomMapMode();
+                              await _selectMapLayer(
+                                rootContext.read<MapProvider>(),
+                                layer,
+                              );
                               if (!context.mounted) {
                                 return;
                               }
                               Navigator.pop(context);
                             },
                           ),
-                          const Divider(),
-                        ],
-                      );
-                    },
-                  ),
-                  // Online layers section
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    child: Text(
-                      AppLocalizations.of(context)!.onlineLayers,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelLarge?.copyWith(color: Colors.grey[600]),
-                    ),
-                  ),
-                  ...MapLayer.allLayers.map(
-                    (layer) => ListTile(
-                      leading:
-                          !rootContext.read<MapProvider>().isUsingCustomMap &&
-                              _currentLayer == layer
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : const Icon(Icons.radio_button_unchecked),
-                      title: Text(layer.getLocalizedName(context)),
-                      subtitle: Text(layer.attribution),
-                      onTap: () async {
-                        await _selectMapLayer(
-                          rootContext.read<MapProvider>(),
-                          layer,
-                        );
-                        if (!context.mounted) {
-                          return;
-                        }
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ),
-                  // Slovenian WMS base layers (only for Slovenian/Croatian regions)
-                  if (AppLocalizations.of(context)!.localeName == 'sl' ||
-                      AppLocalizations.of(context)!.localeName == 'hr') ...[
-                    ListTile(
-                      leading:
-                          !rootContext.read<MapProvider>().isUsingCustomMap &&
-                              _currentLayer == _slovenianAerialLayer
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : const Icon(Icons.radio_button_unchecked),
-                      title: Text(_slovenianAerialLayer.name),
-                      subtitle: Text(_slovenianAerialLayer.attribution),
-                      onTap: () async {
-                        await _selectMapLayer(
-                          rootContext.read<MapProvider>(),
-                          _slovenianAerialLayer,
-                        );
-                        if (!context.mounted) {
-                          return;
-                        }
-                        Navigator.pop(context);
-                      },
-                    ),
-                    ListTile(
-                      leading:
-                          !rootContext.read<MapProvider>().isUsingCustomMap &&
-                              _currentLayer == _dtk25Layer
-                          ? const Icon(Icons.check_circle, color: Colors.green)
-                          : Icon(Icons.radio_button_unchecked),
-                      title: Text(AppLocalizations.of(context)!.topographicMap),
-                      subtitle: Text(_dtk25Layer.attribution),
-                      onTap: () async {
-                        await _selectMapLayer(
-                          rootContext.read<MapProvider>(),
-                          _dtk25Layer,
-                        );
-                        if (!context.mounted) {
-                          return;
-                        }
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                  // WMS Overlays section (only for Slovenian/Croatian regions and when WMS base layer is selected)
-                  if ((AppLocalizations.of(context)!.localeName == 'sl' ||
-                          AppLocalizations.of(context)!.localeName == 'hr') &&
-                      !rootContext.read<MapProvider>().isUsingCustomMap &&
-                      _currentLayer.isWms) ...[
-                    const Divider(),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      child: Text(
-                        AppLocalizations.of(context)!.wmsOverlays,
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Colors.grey[600],
                         ),
-                      ),
-                    ),
-                    Consumer<MapProvider>(
-                      builder: (context, mapProvider, _) {
-                        return Column(
-                          children: [
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.grid_on,
-                                color: Colors.blue,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.cadastralParcels,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showCadastralOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleCadastralOverlay();
-                              },
+                        // Slovenian WMS base layers (only for Slovenian/Croatian regions)
+                        if (AppLocalizations.of(context)!.localeName == 'sl' ||
+                            AppLocalizations.of(context)!.localeName ==
+                                'hr') ...[
+                          ListTile(
+                            leading:
+                                !rootContext
+                                        .read<MapProvider>()
+                                        .isUsingCustomMap &&
+                                    _currentLayer == _slovenianAerialLayer
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                  )
+                                : const Icon(Icons.radio_button_unchecked),
+                            title: Text(_slovenianAerialLayer.name),
+                            subtitle: Text(_slovenianAerialLayer.attribution),
+                            onTap: () async {
+                              await _selectMapLayer(
+                                rootContext.read<MapProvider>(),
+                                _slovenianAerialLayer,
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              Navigator.pop(context);
+                            },
+                          ),
+                          ListTile(
+                            leading:
+                                !rootContext
+                                        .read<MapProvider>()
+                                        .isUsingCustomMap &&
+                                    _currentLayer == _dtk25Layer
+                                ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.green,
+                                  )
+                                : Icon(Icons.radio_button_unchecked),
+                            title: Text(
+                              AppLocalizations.of(context)!.topographicMap,
                             ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.route,
-                                color: Colors.green,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.forestRoads,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showForestRoadsOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleForestRoadsOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.hiking,
-                                color: Colors.brown,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.hikingTrails,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showHikingTrailsOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleHikingTrailsOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.alt_route,
-                                color: Colors.grey,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.mainRoads,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showMainRoadsOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleMainRoadsOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.numbers,
-                                color: Colors.purple,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.houseNumbers,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showHouseNumbersOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleHouseNumbersOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.warning_amber,
-                                color: Colors.orange,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.fireHazardZones,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showFireHazardZonesOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleFireHazardZonesOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.local_fire_department,
-                                color: Colors.red,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.historicalFires,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showHistoricalFiresOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleHistoricalFiresOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.forest,
-                                color: Colors.teal,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.firebreaks,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showFirebreaksOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleFirebreaksOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.warning,
-                                color: Colors.deepOrange,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.krasFireZones,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showKrasFireZonesOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleKrasFireZonesOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.place,
-                                color: Colors.indigo,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(context)!.placeNames,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showPlaceNamesOverlay,
-                              onChanged: (value) {
-                                mapProvider.togglePlaceNamesOverlay();
-                              },
-                            ),
-                            CheckboxListTile(
-                              secondary: const Icon(
-                                Icons.border_outer,
-                                color: Colors.cyan,
-                              ),
-                              title: Text(
-                                AppLocalizations.of(
-                                  context,
-                                )!.municipalityBorders,
-                              ),
-                              subtitle: const Text('© GURS'),
-                              value: mapProvider.showMunicipalityBordersOverlay,
-                              onChanged: (value) {
-                                mapProvider.toggleMunicipalityBordersOverlay();
-                              },
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                  const Divider(),
-                  Consumer<MapProvider>(
-                    builder: (context, mapProvider, _) {
-                      final customMapConfig = mapProvider.customMapConfig;
-                      final hasCustomMap = customMapConfig != null;
-                      return Column(
-                        children: [
+                            subtitle: Text(_dtk25Layer.attribution),
+                            onTap: () async {
+                              await _selectMapLayer(
+                                rootContext.read<MapProvider>(),
+                                _dtk25Layer,
+                              );
+                              if (!context.mounted) {
+                                return;
+                              }
+                              Navigator.pop(context);
+                            },
+                          ),
+                        ],
+                        // WMS Overlays section (only for Slovenian/Croatian regions and when WMS base layer is selected)
+                        if ((AppLocalizations.of(context)!.localeName == 'sl' ||
+                                AppLocalizations.of(context)!.localeName ==
+                                    'hr') &&
+                            !rootContext.read<MapProvider>().isUsingCustomMap &&
+                            _currentLayer.isWms) ...[
+                          const Divider(),
                           Padding(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 8,
                             ),
-                            child: Row(
-                              children: [
-                                const Icon(Icons.photo_library_outlined),
-                                const SizedBox(width: 8),
-                                Expanded(
-                                  child: Text(
-                                    'Custom picture map',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .titleSmall
-                                        ?.copyWith(fontWeight: FontWeight.w700),
-                                  ),
-                                ),
-                              ],
+                            child: Text(
+                              AppLocalizations.of(context)!.wmsOverlays,
+                              style: Theme.of(context).textTheme.labelLarge
+                                  ?.copyWith(color: Colors.grey[600]),
                             ),
                           ),
-                          if (!hasCustomMap)
-                            ListTile(
-                              leading: Icon(Icons.add_photo_alternate),
-                              title: Text(
-                                AppLocalizations.of(context)!.loadFromGallery,
-                              ),
-                              subtitle: const Text(
-                                'Use a cave map image instead of GPS tiles',
-                              ),
-                              onTap: () async {
-                                final loaded = await mapProvider
-                                    .loadCustomMapFromGallery();
-                                if (!context.mounted || !rootContext.mounted) {
-                                  return;
-                                }
-                                Navigator.pop(context);
-                                if (!loaded) {
-                                  return;
-                                }
-                                final drawingProvider = rootContext
-                                    .read<DrawingProvider>();
-                                _syncDrawingContext(
-                                  drawingProvider,
-                                  mapProvider,
-                                );
-                              },
-                            )
-                          else ...[
-                            ListTile(
-                              leading: const Icon(Icons.image_outlined),
-                              title: Text(customMapConfig.displayName),
-                              subtitle: Text(
-                                'Map ID ${customMapConfig.mapId}${customMapConfig.isCalibrated ? ' • Scale set' : ' • Not calibrated'}',
-                              ),
-                            ),
-                            ListTile(
-                              leading: Icon(Icons.swap_horizontal_circle),
-                              title: Text(
-                                AppLocalizations.of(context)!.replaceImage,
-                              ),
-                              subtitle: const Text(
-                                'Pick a different map from the gallery',
-                              ),
-                              onTap: () async {
-                                await mapProvider.replaceCustomMap();
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                              },
-                            ),
-                            ListTile(
-                              leading: const Icon(Icons.straighten),
-                              title: Text(
-                                customMapConfig.isCalibrated
-                                    ? 'Update scale'
-                                    : 'Set scale',
-                              ),
-                              subtitle: const Text(
-                                'Tap two points on the image and enter meters',
-                              ),
-                              onTap: () async {
-                                if (!mapProvider.isUsingCustomMap) {
-                                  await mapProvider.enterCustomMapMode();
-                                }
-                                if (!context.mounted || !rootContext.mounted) {
-                                  return;
-                                }
-                                Navigator.pop(context);
-                                _startCustomMapCalibration(
-                                  rootContext.read<DrawingProvider>(),
-                                );
-                              },
-                            ),
-                            if (customMapConfig.isCalibrated)
-                              ListTile(
-                                leading: Icon(Icons.clear),
-                                title: Text(
-                                  AppLocalizations.of(context)!.clearScale,
-                                ),
-                                onTap: () async {
-                                  await mapProvider.clearCustomMapCalibration();
-                                  if (!context.mounted) return;
-                                  Navigator.pop(context);
-                                },
-                              ),
-                            ListTile(
-                              leading: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              title: Text(
-                                'Remove custom map',
-                                style: TextStyle(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                              subtitle: const Text(
-                                'Deletes the saved image from this device',
-                              ),
-                              onTap: () async {
-                                await mapProvider.removeCustomMap();
-                                if (!context.mounted) return;
-                                Navigator.pop(context);
-                              },
-                            ),
-                          ],
+                          Consumer<MapProvider>(
+                            builder: (context, mapProvider, _) {
+                              return Column(
+                                children: [
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.grid_on,
+                                      color: Colors.blue,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.cadastralParcels,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showCadastralOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleCadastralOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.route,
+                                      color: Colors.green,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!.forestRoads,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showForestRoadsOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleForestRoadsOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.hiking,
+                                      color: Colors.brown,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.hikingTrails,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showHikingTrailsOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleHikingTrailsOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.alt_route,
+                                      color: Colors.grey,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!.mainRoads,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showMainRoadsOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleMainRoadsOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.numbers,
+                                      color: Colors.purple,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.houseNumbers,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showHouseNumbersOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleHouseNumbersOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.warning_amber,
+                                      color: Colors.orange,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.fireHazardZones,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value:
+                                        mapProvider.showFireHazardZonesOverlay,
+                                    onChanged: (value) {
+                                      mapProvider
+                                          .toggleFireHazardZonesOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.local_fire_department,
+                                      color: Colors.red,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.historicalFires,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value:
+                                        mapProvider.showHistoricalFiresOverlay,
+                                    onChanged: (value) {
+                                      mapProvider
+                                          .toggleHistoricalFiresOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.forest,
+                                      color: Colors.teal,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!.firebreaks,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showFirebreaksOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleFirebreaksOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.warning,
+                                      color: Colors.deepOrange,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.krasFireZones,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showKrasFireZonesOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.toggleKrasFireZonesOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.place,
+                                      color: Colors.indigo,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!.placeNames,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider.showPlaceNamesOverlay,
+                                    onChanged: (value) {
+                                      mapProvider.togglePlaceNamesOverlay();
+                                    },
+                                  ),
+                                  CheckboxListTile(
+                                    secondary: const Icon(
+                                      Icons.border_outer,
+                                      color: Colors.cyan,
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.municipalityBorders,
+                                    ),
+                                    subtitle: const Text('© GURS'),
+                                    value: mapProvider
+                                        .showMunicipalityBordersOverlay,
+                                    onChanged: (value) {
+                                      mapProvider
+                                          .toggleMunicipalityBordersOverlay();
+                                    },
+                                  ),
+                                ],
+                              );
+                            },
+                          ),
                         ],
-                      );
-                    },
-                      ),
-                    ],
-                  ),
-                  _buildMapDownloadTab(rootContext),
-                  _buildMapCachedTab(rootContext),
-                ],
+                        const Divider(),
+                        Consumer<MapProvider>(
+                          builder: (context, mapProvider, _) {
+                            final customMapConfig = mapProvider.customMapConfig;
+                            final hasCustomMap = customMapConfig != null;
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(Icons.photo_library_outlined),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          'Custom picture map',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.w700,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                if (!hasCustomMap)
+                                  ListTile(
+                                    leading: Icon(Icons.add_photo_alternate),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.loadFromGallery,
+                                    ),
+                                    subtitle: const Text(
+                                      'Use a cave map image instead of GPS tiles',
+                                    ),
+                                    onTap: () async {
+                                      final loaded = await mapProvider
+                                          .loadCustomMapFromGallery();
+                                      if (!context.mounted ||
+                                          !rootContext.mounted) {
+                                        return;
+                                      }
+                                      Navigator.pop(context);
+                                      if (!loaded) {
+                                        return;
+                                      }
+                                      final drawingProvider = rootContext
+                                          .read<DrawingProvider>();
+                                      _syncDrawingContext(
+                                        drawingProvider,
+                                        mapProvider,
+                                      );
+                                    },
+                                  )
+                                else ...[
+                                  ListTile(
+                                    leading: const Icon(Icons.image_outlined),
+                                    title: Text(customMapConfig.displayName),
+                                    subtitle: Text(
+                                      'Map ID ${customMapConfig.mapId}${customMapConfig.isCalibrated ? ' • Scale set' : ' • Not calibrated'}',
+                                    ),
+                                  ),
+                                  ListTile(
+                                    leading: Icon(Icons.swap_horizontal_circle),
+                                    title: Text(
+                                      AppLocalizations.of(
+                                        context,
+                                      )!.replaceImage,
+                                    ),
+                                    subtitle: const Text(
+                                      'Pick a different map from the gallery',
+                                    ),
+                                    onTap: () async {
+                                      await mapProvider.replaceCustomMap();
+                                      if (!context.mounted) return;
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  ListTile(
+                                    leading: const Icon(Icons.straighten),
+                                    title: Text(
+                                      customMapConfig.isCalibrated
+                                          ? 'Update scale'
+                                          : 'Set scale',
+                                    ),
+                                    subtitle: const Text(
+                                      'Tap two points on the image and enter meters',
+                                    ),
+                                    onTap: () async {
+                                      if (!mapProvider.isUsingCustomMap) {
+                                        await mapProvider.enterCustomMapMode();
+                                      }
+                                      if (!context.mounted ||
+                                          !rootContext.mounted) {
+                                        return;
+                                      }
+                                      Navigator.pop(context);
+                                      _startCustomMapCalibration(
+                                        rootContext.read<DrawingProvider>(),
+                                      );
+                                    },
+                                  ),
+                                  if (customMapConfig.isCalibrated)
+                                    ListTile(
+                                      leading: Icon(Icons.clear),
+                                      title: Text(
+                                        AppLocalizations.of(
+                                          context,
+                                        )!.clearScale,
+                                      ),
+                                      onTap: () async {
+                                        await mapProvider
+                                            .clearCustomMapCalibration();
+                                        if (!context.mounted) return;
+                                        Navigator.pop(context);
+                                      },
+                                    ),
+                                  ListTile(
+                                    leading: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
+                                    ),
+                                    title: Text(
+                                      'Remove custom map',
+                                      style: TextStyle(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.error,
+                                      ),
+                                    ),
+                                    subtitle: const Text(
+                                      'Deletes the saved image from this device',
+                                    ),
+                                    onTap: () async {
+                                      await mapProvider.removeCustomMap();
+                                      if (!context.mounted) return;
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                    _buildMapDownloadTab(rootContext),
+                    _buildMapCachedTab(rootContext),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-      ),
       ),
     );
   }
@@ -1071,10 +1125,12 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 ),
                 isExpanded: true,
                 items: MapLayer.allLayers
-                    .map((layer) => DropdownMenuItem(
-                          value: layer,
-                          child: Text(layer.getLocalizedName(context)),
-                        ))
+                    .map(
+                      (layer) => DropdownMenuItem(
+                        value: layer,
+                        child: Text(layer.getLocalizedName(context)),
+                      ),
+                    )
                     .toList(),
                 onChanged: (layer) {
                   if (layer != null) provider.setSelectedLayer(layer);
@@ -1091,15 +1147,17 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                   isExpanded: true,
                   items: provider.localStyles
                       .where((style) => style.region != null)
-                      .map((style) => DropdownMenuItem(
-                            value: style,
-                            child: Text(
-                              '${style.displayName} '
-                              '(z${style.region!.minZoom}-${style.region!.maxZoom}, '
-                              '${_formatNumber(style.tileCount)} tiles)',
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ))
+                      .map(
+                        (style) => DropdownMenuItem(
+                          value: style,
+                          child: Text(
+                            '${style.displayName} '
+                            '(z${style.region!.minZoom}-${style.region!.maxZoom}, '
+                            '${_formatNumber(style.tileCount)} tiles)',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      )
                       .toList(),
                   onChanged: (style) {
                     if (style == null) return;
@@ -1196,11 +1254,10 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
               Text(
                 'Cache: ${_formatBytes(provider.cacheSizeBytes)}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.6),
-                    ),
+                  color: Theme.of(
+                    context,
+                  ).colorScheme.onSurface.withValues(alpha: 0.6),
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1223,9 +1280,9 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 'Done. ${provider.progress.downloaded} downloaded, '
                 '${provider.progress.skipped} cached, '
                 '${provider.progress.failed} failed',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.green,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(color: Colors.green),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -1358,35 +1415,39 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 child: Text(
                   'No peers found on the local network.',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
-                      ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
-            ...provider.peerCatalogs.map((catalog) => _buildOfflinePeerCard(
-                  context,
-                  provider,
-                  catalog,
-                )),
+            ...provider.peerCatalogs.map(
+              (catalog) => _buildOfflinePeerCard(context, provider, catalog),
+            ),
             ...provider.discoveredPeers
-                .where((peer) =>
-                    !provider.peerCatalogs.any((catalog) => catalog.peer == peer))
-                .map((peer) => ListTile(
-                      leading: const Icon(Icons.devices),
-                      title: Text(peer.ipAddress),
-                      subtitle: Text(loc.fetchingCatalog),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.remove_circle_outline),
-                        onPressed: () => provider.removePeer(peer),
-                      ),
-                    )),
+                .where(
+                  (peer) => !provider.peerCatalogs.any(
+                    (catalog) => catalog.peer == peer,
+                  ),
+                )
+                .map(
+                  (peer) => ListTile(
+                    leading: const Icon(Icons.devices),
+                    title: Text(peer.ipAddress),
+                    subtitle: Text(loc.fetchingCatalog),
+                    trailing: IconButton(
+                      icon: const Icon(Icons.remove_circle_outline),
+                      onPressed: () => provider.removePeer(peer),
+                    ),
+                  ),
+                ),
             if (provider.isSyncing || provider.syncStatus.isNotEmpty) ...[
               const Divider(),
               if (provider.isSyncing)
                 LinearProgressIndicator(
-                  value: provider.syncProgress > 0 ? provider.syncProgress : null,
+                  value: provider.syncProgress > 0
+                      ? provider.syncProgress
+                      : null,
                 ),
               ListTile(
                 title: Text(
@@ -1442,19 +1503,19 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                 child: Text(
                   'No cached tiles on this device',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onSurface
-                            .withValues(alpha: 0.6),
-                      ),
+                    color: Theme.of(
+                      context,
+                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                  ),
                 ),
               ),
             ...catalog.styles.map((style) {
               final localMatch = provider.localStyles.where(
                 (localStyle) => localStyle.hash == style.hash,
               );
-              final localCount =
-                  localMatch.isNotEmpty ? localMatch.first.tileCount : 0;
+              final localCount = localMatch.isNotEmpty
+                  ? localMatch.first.tileCount
+                  : 0;
               final missingTiles = style.tileCount - localCount;
 
               return ListTile(
@@ -1504,10 +1565,7 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
 
     _mapController.fitCamera(
       CameraFit.bounds(
-        bounds: LatLngBounds(
-          LatLng(minLat, minLng),
-          LatLng(maxLat, maxLng),
-        ),
+        bounds: LatLngBounds(LatLng(minLat, minLng), LatLng(maxLat, maxLng)),
         padding: const EdgeInsets.all(50),
       ),
     );
@@ -2128,8 +2186,8 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                   ),
                   subtitle: Text(
                     message != null
-                        ? 'This also removes the linked SAR message.'
-                        : 'Hide this marker from the map.',
+                        ? 'Removes the marker and linked SAR message on this device only.'
+                        : 'Hides this marker from the map on this device only.',
                   ),
                   onTap: () async {
                     final confirmed = await _confirmSarMarkerRemoval(
@@ -2161,8 +2219,8 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         title: Text(AppLocalizations.of(context)!.removeSarMarker),
         content: Text(
           hasMessage
-              ? 'This will remove the marker and its linked chat message.'
-              : 'This will hide the marker from the map, even if it is not visible in chat.',
+              ? 'This will remove the marker and its linked chat message on this device only. Other team members will still see them.'
+              : 'This will hide the marker from the map on this device only. Other team members will still see it.',
         ),
         actions: [
           TextButton(
@@ -2177,6 +2235,32 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmAndDeleteDrawing(
+    DrawingProvider drawingProvider,
+    String drawingId,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(AppLocalizations.of(dialogContext)!.deleteDrawing),
+        content: Text(AppLocalizations.of(dialogContext)!.deleteDrawingConfirm),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: Text(AppLocalizations.of(dialogContext)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(AppLocalizations.of(dialogContext)!.delete),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    drawingProvider.removeDrawing(drawingId);
   }
 
   Future<void> _openSarMarkerMessage(
@@ -2538,7 +2622,9 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(AppLocalizations.of(context)!.failedToSendSarMarker(e.toString())),
+          content: Text(
+            AppLocalizations.of(context)!.failedToSendSarMarker(e.toString()),
+          ),
           backgroundColor: Colors.red,
         ),
       );
@@ -2570,11 +2656,22 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
         _ensureCustomMapViewport(mapProvider, customMapConfig);
 
         final allContactsWithLocation = contactsProvider.contactsWithLocation;
-        final contactsWithLocation = mapProvider.hideRepeatersOnMap
+        // Simple mode: only favourite chat contacts (team members) on the map.
+        final scopedContactsWithLocation =
+            context.watch<AppProvider>().isSimpleMode
             ? allContactsWithLocation
-                  .where((contact) => !contact.isRepeater)
+                  .where(
+                    (contact) =>
+                        contact.isFavourite &&
+                        contact.type == ContactType.chat,
+                  )
                   .toList()
             : allContactsWithLocation;
+        final contactsWithLocation = mapProvider.hideRepeatersOnMap
+            ? scopedContactsWithLocation
+                  .where((contact) => !contact.isRepeater)
+                  .toList()
+            : scopedContactsWithLocation;
         // Filter SAR markers based on visibility toggle
         final allSarMarkers = messagesProvider.sarMarkers;
         final sarMarkers = !drawingProvider.showSarMarkers
@@ -2784,8 +2881,8 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                       return;
                     }
 
-                    final offlineProvider =
-                        context.read<offline.OfflineTilesProvider>();
+                    final offlineProvider = context
+                        .read<offline.OfflineTilesProvider>();
                     if (!isCustomMapMode &&
                         offlineProvider.drawingMode !=
                             offline.DrawingMode.none) {
@@ -3528,7 +3625,7 @@ class _MapTabState extends State<MapTab> with AutomaticKeepAliveClientMixin {
                     showDeleteButtons: drawingProvider.isDrawing,
                     pointTransformer: pointTransformer,
                     onDeleteDrawing: (drawingId) {
-                      drawingProvider.removeDrawing(drawingId);
+                      _confirmAndDeleteDrawing(drawingProvider, drawingId);
                     },
                     onTapDrawing: (drawing) {
                       // Navigate to the corresponding message in Messages tab
@@ -3944,7 +4041,8 @@ class _OfflineSelectionControls extends StatelessWidget {
   final void Function(
     BuildContext context,
     offline.OfflineTilesProvider provider,
-  ) onConfirm;
+  )
+  onConfirm;
   final void Function(offline.OfflineTilesProvider provider) onCurrentView;
 
   const _OfflineSelectionControls({
@@ -3956,7 +4054,8 @@ class _OfflineSelectionControls extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<offline.OfflineTilesProvider>(
       builder: (context, provider, _) {
-        final hasDraft = provider.currentVertices.isNotEmpty ||
+        final hasDraft =
+            provider.currentVertices.isNotEmpty ||
             provider.rectangleFirstCorner != null;
         if (provider.drawingMode == offline.DrawingMode.none &&
             !provider.hasPolygons &&
@@ -3966,12 +4065,14 @@ class _OfflineSelectionControls extends StatelessWidget {
 
         final theme = Theme.of(context);
         final title = switch (provider.drawingMode) {
-          offline.DrawingMode.rectangle => provider.rectangleFirstCorner == null
-              ? 'Tap first corner'
-              : 'Tap opposite corner',
+          offline.DrawingMode.rectangle =>
+            provider.rectangleFirstCorner == null
+                ? 'Tap first corner'
+                : 'Tap opposite corner',
           offline.DrawingMode.polygon =>
             '${provider.currentVertices.length} polygon points',
-          offline.DrawingMode.none => '${provider.polygons.length} area selected',
+          offline.DrawingMode.none =>
+            '${provider.polygons.length} area selected',
         };
 
         return Positioned(
@@ -3998,10 +4099,7 @@ class _OfflineSelectionControls extends StatelessWidget {
                       ),
                       const SizedBox(width: 8),
                       Expanded(
-                        child: Text(
-                          title,
-                          style: theme.textTheme.labelLarge,
-                        ),
+                        child: Text(title, style: theme.textTheme.labelLarge),
                       ),
                     ],
                   ),
@@ -4075,9 +4173,9 @@ class _MapZoomSelector extends StatelessWidget {
           width: 24,
           child: Text(
             '$value',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
             textAlign: TextAlign.center,
           ),
         ),

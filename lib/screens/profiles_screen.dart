@@ -19,11 +19,7 @@ class ProfilesScreen extends StatelessWidget {
             title: Text(AppLocalizations.of(context)!.profiles),
             actions: [
               IconButton(
-                onPressed: () async {
-                  await context
-                      .read<ProfileWorkspaceCoordinator>()
-                      .importProfileFromFile();
-                },
+                onPressed: () => _importProfile(context),
                 icon: const Icon(Icons.file_open),
                 tooltip: AppLocalizations.of(context)!.importProfile,
               ),
@@ -126,9 +122,11 @@ class ProfilesScreen extends StatelessWidget {
                                         await _renameProfile(context, profile);
                                         break;
                                       case 'delete':
-                                        await context
-                                            .read<ProfileWorkspaceCoordinator>()
-                                            .deleteProfile(profile);
+                                        await _deleteProfile(
+                                          context,
+                                          profile,
+                                          isActive: isActive,
+                                        );
                                         break;
                                     }
                                   },
@@ -181,6 +179,67 @@ class ProfilesScreen extends StatelessWidget {
       sections.add('Map workspace');
     }
     return sections.isEmpty ? 'Empty profile' : sections.join(' | ');
+  }
+
+  Future<void> _importProfile(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final errorColor = Theme.of(context).colorScheme.error;
+    final coordinator = context.read<ProfileWorkspaceCoordinator>();
+    try {
+      final imported = await coordinator.importProfileFromFile();
+      if (imported == null) {
+        messenger.showSnackBar(
+          SnackBar(
+            content: const Text('Could not import profile — invalid file'),
+            backgroundColor: errorColor,
+          ),
+        );
+        return;
+      }
+      messenger.showSnackBar(
+        SnackBar(content: Text('Imported profile "${imported.name}"')),
+      );
+    } catch (_) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: const Text('Could not import profile — invalid file'),
+          backgroundColor: errorColor,
+        ),
+      );
+    }
+  }
+
+  Future<void> _deleteProfile(
+    BuildContext context,
+    ConfigProfile profile, {
+    required bool isActive,
+  }) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Profile'),
+        content: Text(
+          'Delete "${profile.name}"? Its messages and contacts will be '
+          'permanently erased.'
+          '${isActive ? '\n\nThis profile is currently active. The app will switch to the Default profile.' : ''}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: Text(AppLocalizations.of(context)!.cancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: Text(AppLocalizations.of(context)!.delete),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) {
+      return;
+    }
+    await context.read<ProfileWorkspaceCoordinator>().deleteProfile(profile);
   }
 
   Future<void> _createProfile(BuildContext context) async {
