@@ -9,6 +9,11 @@ typedef RawPacketSender =
       required Uint8List payload,
     });
 
+/// Pacing between consecutive raw fragments. Firmware v1.15 rejects bursts of
+/// raw packets with `ERROR: Table full` when fragments are blasted too quickly,
+/// so we space them out to keep the radio's raw transmit queue from overflowing.
+const Duration _interFragmentDelay = Duration(milliseconds: 350);
+
 Future<bool> serveCachedSessionFragments<T>({
   required String providerLabel,
   required String sessionId,
@@ -19,6 +24,7 @@ Future<bool> serveCachedSessionFragments<T>({
   required Uint8List Function(T fragment) encodeBinary,
   required RawPacketSender? sendRawPacket,
   Set<int>? requestedIndices,
+  Duration interFragmentDelay = _interFragmentDelay,
 }) async {
   if (fragments.isEmpty) {
     debugPrint('⚠️ [$providerLabel] No cached fragments for $sessionId');
@@ -56,6 +62,9 @@ Future<bool> serveCachedSessionFragments<T>({
       continue;
     }
     try {
+      if (servedCount > 0 && interFragmentDelay > Duration.zero) {
+        await Future<void>.delayed(interFragmentDelay);
+      }
       await sendRawPacket(
         contactPath: requester.outPath,
         contactPathLen: requester.routeEncodedPathLen,

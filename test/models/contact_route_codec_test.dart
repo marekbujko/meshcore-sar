@@ -114,4 +114,59 @@ void main() {
       expect(contact.routeSummary, 'Flood/Unknown');
     });
   });
+
+  group('ContactRouteCodec.toLegacyRawPath', () {
+    test('zero-hop direct (0x40) → empty legacy path', () {
+      final legacy = ContactRouteCodec.toLegacyRawPath(0x40, Uint8List(0));
+
+      expect(legacy.length, 0);
+      expect(legacy.path, isEmpty);
+    });
+
+    test('1-hop 2-byte hash (0x41) → first byte of the hash', () {
+      final legacy = ContactRouteCodec.toLegacyRawPath(
+        0x41,
+        Uint8List.fromList([0x02, 0x62]),
+      );
+
+      expect(legacy.length, 1);
+      expect(legacy.path, [0x02]);
+    });
+
+    test('2-hop 2-byte hash (0x42) → first byte of each hash', () {
+      final legacy = ContactRouteCodec.toLegacyRawPath(
+        0x42,
+        Uint8List.fromList([0xAA, 0xBB, 0xCC, 0xDD]),
+      );
+
+      expect(legacy.length, 2);
+      expect(legacy.path, [0xAA, 0xCC]);
+    });
+
+    test('signed 3-byte descriptor (-126 / 0x82) down-samples each hop', () {
+      final outPath = Uint8List(64)
+        ..setRange(0, 6, [0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF]);
+      final legacy = ContactRouteCodec.toLegacyRawPath(-126, outPath);
+
+      expect(legacy.length, 2);
+      expect(legacy.path, [0xAA, 0xDD]);
+    });
+
+    test('legacy 1-byte hops (< 0x40) pass through trimmed', () {
+      final legacy = ContactRouteCodec.toLegacyRawPath(
+        0x03,
+        Uint8List.fromList([0xAA, 0xBB, 0xCC, 0x00, 0x00]),
+      );
+
+      expect(legacy.length, 3);
+      expect(legacy.path, [0xAA, 0xBB, 0xCC]);
+    });
+
+    test('unknown descriptor (0xFF) collapses to direct', () {
+      final legacy = ContactRouteCodec.toLegacyRawPath(-1, Uint8List(0));
+
+      expect(legacy.length, 0);
+      expect(legacy.path, isEmpty);
+    });
+  });
 }

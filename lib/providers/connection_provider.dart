@@ -1833,15 +1833,23 @@ class ConnectionProvider with ChangeNotifier {
 
   /// Send a raw binary voice packet directly to a contact (cmdSendRawData, code 25).
   /// Only works for contacts with a known direct route (outPathLen >= 0).
+  ///
+  /// Callers pass the contact's *encoded* route descriptor ([routeEncodedPathLen])
+  /// and encoded [outPath]. The `CMD_SEND_RAW_DATA` handler in companion firmware
+  /// v1.15 misinterprets encoded descriptors as a literal path-byte count, so we
+  /// normalise to the legacy raw path format (literal hop count + one byte per
+  /// hop) before handing the frame to the transport. See
+  /// [ContactRouteCodec.toLegacyRawPath].
   Future<void> sendRawVoicePacket({
     required Uint8List contactPath,
     required int contactPathLen,
     required Uint8List payload,
   }) async {
     if (!_activeService.isConnected) return;
+    final legacy = ContactRouteCodec.toLegacyRawPath(contactPathLen, contactPath);
     await _activeService.sendRawVoicePacket(
-      contactPathLen: contactPathLen,
-      contactPath: contactPath,
+      contactPathLen: legacy.length,
+      contactPath: Uint8List.fromList(legacy.path),
       payload: payload,
     );
   }

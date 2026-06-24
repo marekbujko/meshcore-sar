@@ -196,6 +196,54 @@ class ContactRouteCodec {
     final hopCount = raw & 0x3F;
     return hopCount * hashSize <= maxPathBytes;
   }
+
+  /// Converts an encoded MeshCore route descriptor + path into the legacy raw
+  /// path format expected by the `CMD_SEND_RAW_DATA` (0x19) handler in
+  /// companion firmware v1.15.
+  ///
+  /// The raw-data handler treats the path-length byte as a *literal* hop count
+  /// (one byte per hop) rather than as an encoded descriptor, so a 1-hop route
+  /// using 2-byte hashes (descriptor `0x41`) would otherwise be misread as
+  /// "65 path bytes" and rejected with `ERROR: Unsupported command`. We
+  /// down-sample every hop to its first hash byte and emit a plain hop count.
+  ///
+  /// Routes that are already legacy (hash size 1, descriptor `< 0x40`) pass
+  /// through unchanged. Unknown/flood descriptors collapse to a zero-hop
+  /// direct path (raw transport does not support flood routing).
+  static LegacyRawPath toLegacyRawPath(int descriptor, Uint8List path) {
+    final raw = toUnsignedDescriptor(descriptor);
+    if (raw == _unknownDescriptor) {
+      return const LegacyRawPath(length: 0, path: <int>[]);
+    }
+    if (raw < 0x40) {
+      // Hash size 1: the encoded path is already one byte per hop.
+      final hopCount = raw;
+      final available = math.min(hopCount, path.length);
+      return LegacyRawPath(
+        length: hopCount,
+        path: Uint8List.fromList(path.sublist(0, available)),
+      );
+    }
+    final hopCount = raw & 0x3F;
+    final hashSize = ((raw >> 6) & 0x03) + 1;
+    final legacy = Uint8List(hopCount);
+    for (var hop = 0; hop < hopCount; hop++) {
+      final srcIndex = hop * hashSize;
+      if (srcIndex < path.length) {
+        legacy[hop] = path[srcIndex];
+      }
+    }
+    return LegacyRawPath(length: hopCount, path: legacy);
+  }
+}
+
+/// Legacy raw-transport path: a literal hop count plus one byte per hop, as
+/// expected by the firmware `CMD_SEND_RAW_DATA` handler.
+class LegacyRawPath {
+  const LegacyRawPath({required this.length, required this.path});
+
+  final int length;
+  final List<int> path;
 }
 
 extension ContactLocalization on Contact {
