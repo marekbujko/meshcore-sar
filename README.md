@@ -75,6 +75,24 @@ It uses the MeshCore protocol over LoRa for long-range, infrastructure-free comm
 - Incident command and coordination roles
 - Operators working in weak/no cellular coverage
 
+## Connecting Your Radio (BLE)
+
+The app pairs with your MeshCore radio over Bluetooth Low Energy.
+
+### Windows
+
+On Windows 11 (tested on 25H2), pair the radio through the system Bluetooth menu **before** connecting in the app:
+
+1. Open **Settings → Bluetooth & devices → Add device → Bluetooth**.
+2. Select your MeshCore radio and complete pairing, entering the **PIN** when prompted.
+3. Launch MeshCore SAR and connect — the radio now appears as a paired device.
+
+If the radio does not show up or fails to connect in-app, remove it from the Windows Bluetooth menu and repeat the pairing step.
+
+### iOS / Android
+
+Connect directly from within the app — no separate system pairing step is required.
+
 ## Permissions (App Use)
 
 - Bluetooth: mesh device communication
