@@ -147,6 +147,22 @@ class ChannelLocationSharingResult {
   });
 }
 
+/// Radio fast-GPS region scope, mirroring the firmware's `fast_gps_region`
+/// custom var. Index 0 is unscoped (flood everywhere); higher indices restrict
+/// beacons to a named region. `labels` comes from the firmware so the picker
+/// always matches the regions that build supports.
+class FastGpsRegionState {
+  final List<String> labels;
+  final int selectedIndex;
+
+  const FastGpsRegionState({required this.labels, required this.selectedIndex});
+
+  String get selectedLabel =>
+      (selectedIndex >= 0 && selectedIndex < labels.length)
+      ? labels[selectedIndex]
+      : (labels.isNotEmpty ? labels.first : 'Unscoped');
+}
+
 /// Main App Provider - coordinates all other providers
 class AppProvider with ChangeNotifier {
   static const int _maxDirectPayloadHops = 3;
@@ -981,9 +997,17 @@ class AppProvider with ChangeNotifier {
         );
       };
 
-      locationTrackingService.onFastLocationUpdate = (position, reason) {
-        unawaited(_sendFastLocationUpdate(position, reason: reason));
-      };
+      locationTrackingService.onFastLocationUpdate =
+          (latitude, longitude, speedKmh, reason) {
+            unawaited(
+              _sendFastLocationUpdate(
+                latitude: latitude,
+                longitude: longitude,
+                speedKmh: speedKmh,
+                reason: reason,
+              ),
+            );
+          };
 
       debugPrint('✅ [AppProvider] Location tracking service initialized');
     } catch (e) {
@@ -2903,6 +2927,34 @@ class AppProvider with ChangeNotifier {
     }
   }
 
+  /// Reads the radio's fast-GPS region scope, or `null` when the firmware does
+  /// not expose region scoping (older builds only know `fast_gps_channel`).
+  Future<FastGpsRegionState?> getFastGpsRegionState() async {
+    if (!connectionProvider.deviceInfo.isConnected) {
+      return null;
+    }
+    final vars = await connectionProvider.getCustomVars();
+    final labelsRaw = vars['fast_gps_regions'];
+    if (labelsRaw == null || labelsRaw.isEmpty) {
+      return null;
+    }
+    final labels = labelsRaw.split(',');
+    final index = int.tryParse(vars['fast_gps_region'] ?? '0') ?? 0;
+    return FastGpsRegionState(
+      labels: labels,
+      selectedIndex: (index >= 0 && index < labels.length) ? index : 0,
+    );
+  }
+
+  /// Sets the radio's fast-GPS region scope by index (0 = unscoped).
+  Future<void> setFastGpsRegion(int index) async {
+    if (!connectionProvider.deviceInfo.isConnected) {
+      throw StateError('Connect to a device first');
+    }
+    await _setDeviceCustomVarOrThrow('fast_gps_region', index.toString());
+    notifyListeners();
+  }
+
   Future<ChannelLocationSharingState> getChannelLocationSharingState(
     int channelIdx,
   ) async {
@@ -3074,8 +3126,10 @@ class AppProvider with ChangeNotifier {
     );
   }
 
-  Future<void> _sendFastLocationUpdate(
-    dynamic position, {
+  Future<void> _sendFastLocationUpdate({
+    required double latitude,
+    required double longitude,
+    required int speedKmh,
     required String reason,
   }) async {
     if (!connectionProvider.deviceInfo.isConnected) {
@@ -3108,20 +3162,21 @@ class AppProvider with ChangeNotifier {
         .sublist(0, 6)
         .map((b) => b.toRadixString(16).padLeft(2, '0'))
         .join();
+    final clampedSpeedKmh = speedKmh.clamp(0, 255);
     final packet = FastGpsPacket(
       senderKey6: senderKey6,
-      latitude: position.latitude as double,
-      longitude: position.longitude as double,
-      timestampSeconds: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      latitude: latitude,
+      longitude: longitude,
+      speedKmh: clampedSpeedKmh,
     );
     debugPrint(
       '📤 [AppProvider] Fast GPS send '
       'reason=$reason '
       'sender=$senderKey6 '
       'channel=$channelIdx '
-      'lat=${position.latitude} '
-      'lon=${position.longitude} '
-      'ts=${packet.timestampSeconds}',
+      'lat=$latitude '
+      'lon=$longitude '
+      'speed=${clampedSpeedKmh}km/h',
     );
     try {
       await connectionProvider.sendChannelData(
@@ -3131,7 +3186,7 @@ class AppProvider with ChangeNotifier {
       );
       debugPrint(
         '✅ [AppProvider] Fast GPS sent '
-        'sender=$senderKey6 channel=$channelIdx ts=${packet.timestampSeconds}',
+        'sender=$senderKey6 channel=$channelIdx speed=${speedKmh}km/h',
       );
     } catch (e) {
       debugPrint('⚠️ [AppProvider] Fast GPS send failed: $e');
@@ -3151,7 +3206,17 @@ class AppProvider with ChangeNotifier {
       return false;
     }
 
-    await _sendFastLocationUpdate(position, reason: 'test');
+    // Geolocator reports ground speed in m/s; the beacon carries km/h (0..255).
+    final speedMs = position.speed;
+    final speedKmh = (speedMs.isFinite && speedMs > 0)
+        ? (speedMs * 3.6).round().clamp(0, 255)
+        : 0;
+    await _sendFastLocationUpdate(
+      latitude: position.latitude,
+      longitude: position.longitude,
+      speedKmh: speedKmh,
+      reason: 'test',
+    );
     return true;
   }
 
@@ -3692,6 +3757,10 @@ class AppProvider with ChangeNotifier {
     if (fastGpsPacket == null) {
       return false;
     }
+
+    // Heard a peer beacon — yield the channel briefly before our own send, to
+    // avoid collisions (mirrors the firmware's post-RX hold-off).
+    locationTrackingService.noteFastGpsBeaconHeard();
 
     final sender = _resolveContactByPrefixHex(fastGpsPacket.senderKey6);
     if (sender != null) {

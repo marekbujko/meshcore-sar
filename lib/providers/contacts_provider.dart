@@ -1164,6 +1164,10 @@ class ContactsProvider with ChangeNotifier {
       return;
     }
 
+    // The fast-GPS beacon carries no timestamp — stamp our own receive time.
+    final receivedAt = DateTime.now();
+    final receivedAtSeconds = receivedAt.millisecondsSinceEpoch ~/ 1000;
+
     final updatedTelemetry = _mergeTelemetryForContact(
       existingTelemetry: contact.telemetry,
       incomingTelemetry: ContactTelemetry(
@@ -1171,9 +1175,7 @@ class ContactsProvider with ChangeNotifier {
         batteryPercentage: null,
         batteryMilliVolts: null,
         temperature: null,
-        timestamp: DateTime.fromMillisecondsSinceEpoch(
-          packet.timestampSeconds * 1000,
-        ),
+        timestamp: receivedAt,
         humidity: null,
         pressure: null,
         extraSensorData: null,
@@ -1187,13 +1189,13 @@ class ContactsProvider with ChangeNotifier {
       'contactKey=${contact.publicKeyHex} '
       'lat=${packet.latitude} '
       'lon=${packet.longitude} '
-      'ts=${packet.timestampSeconds}',
+      'speed=${packet.speedKmh}km/h',
     );
 
     final updatedContact = contact.copyWith(
       telemetry: updatedTelemetry,
-      lastAdvert: packet.timestampSeconds,
-      lastMod: packet.timestampSeconds,
+      lastAdvert: receivedAtSeconds,
+      lastMod: receivedAtSeconds,
       advLat: _coordinateToAdvertMicrodegrees(packet.latitude),
       advLon: _coordinateToAdvertMicrodegrees(packet.longitude),
     );

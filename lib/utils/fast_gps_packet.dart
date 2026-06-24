@@ -1,8 +1,23 @@
 import 'dart:typed_data';
 
+/// Fast-GPS position beacon, wire-compatible with the MeshUI firmware
+/// (`maybeSendFastGpsUpdate` in MyMesh.cpp).
+///
+/// 16-byte binary payload sent as a `DATA_TYPE_DEV` group datagram on a
+/// non-public channel:
+///
+/// ```
+/// [0]      magic 0x47 ('G')
+/// [1..6]   sender public-key prefix (6 bytes)
+/// [7..10]  latitude  in microdegrees (int32, little-endian)
+/// [11..14] longitude in microdegrees (int32, little-endian)
+/// [15]     ground speed in km/h (uint8, clamped 0..255)
+/// ```
+///
+/// The beacon carries no timestamp — receivers stamp their own RX time.
 class FastGpsPacket {
   static const int magic = 0x47; // 'G'
-  static const int _payloadLength = 19;
+  static const int _payloadLength = 16;
   // Store coordinates in microdegrees. This preserves sub-meter precision,
   // which comfortably satisfies the meter-accuracy requirement.
   static const double coordinateScale = 1e6;
@@ -10,13 +25,15 @@ class FastGpsPacket {
   final String senderKey6;
   final double latitude;
   final double longitude;
-  final int timestampSeconds;
+
+  /// Ground speed in km/h (0..255), as carried in the beacon's trailing byte.
+  final int speedKmh;
 
   const FastGpsPacket({
     required this.senderKey6,
     required this.latitude,
     required this.longitude,
-    required this.timestampSeconds,
+    this.speedKmh = 0,
   });
 
   static bool isFastGpsBinary(Uint8List payload) =>
@@ -32,7 +49,7 @@ class FastGpsPacket {
     final data = ByteData.sublistView(payload);
     final latitude = data.getInt32(7, Endian.little) / coordinateScale;
     final longitude = data.getInt32(11, Endian.little) / coordinateScale;
-    final timestampSeconds = data.getUint32(15, Endian.little);
+    final speedKmh = data.getUint8(15);
 
     if (!_isValidCoordinate(latitude, longitude)) {
       return null;
@@ -42,7 +59,7 @@ class FastGpsPacket {
       senderKey6: key6,
       latitude: latitude,
       longitude: longitude,
-      timestampSeconds: timestampSeconds,
+      speedKmh: speedKmh,
     );
   }
 
@@ -55,7 +72,7 @@ class FastGpsPacket {
     }
     data.setInt32(7, (latitude * coordinateScale).round(), Endian.little);
     data.setInt32(11, (longitude * coordinateScale).round(), Endian.little);
-    data.setUint32(15, timestampSeconds, Endian.little);
+    data.setUint8(15, speedKmh.clamp(0, 255));
     return out;
   }
 

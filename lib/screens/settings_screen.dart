@@ -85,6 +85,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   double _fastLocationMovementThresholdMeters = 10.0;
   int _fastLocationActiveCadenceSeconds = 10;
   int? _fastLocationChannelIdx;
+  FastGpsRegionState? _fastGpsRegionState;
   bool _rotateMapWithHeading = false;
   bool _showMapDebugInfo = false;
   bool _openMapInFullscreen = false;
@@ -410,6 +411,58 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _locationService.fastLocationActiveCadenceSeconds;
       _fastLocationChannelIdx = _locationService.fastLocationChannelIdx;
     });
+    await _loadFastGpsRegionState();
+  }
+
+  Future<void> _loadFastGpsRegionState() async {
+    final appProvider = context.read<AppProvider>();
+    FastGpsRegionState? regionState;
+    try {
+      regionState = await appProvider.getFastGpsRegionState();
+    } catch (_) {
+      regionState = null;
+    }
+    if (!mounted) return;
+    setState(() => _fastGpsRegionState = regionState);
+  }
+
+  Future<void> _editFastGpsRegion() async {
+    final regionState = _fastGpsRegionState;
+    if (regionState == null) return;
+
+    final selected = await showModalBottomSheet<int>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (var i = 0; i < regionState.labels.length; i++)
+              ListTile(
+                leading: Icon(i == 0 ? Icons.public : Icons.travel_explore),
+                title: Text(regionState.labels[i]),
+                trailing: regionState.selectedIndex == i
+                    ? const Icon(Icons.check)
+                    : null,
+                onTap: () => Navigator.pop(sheetContext, i),
+              ),
+          ],
+        ),
+      ),
+    );
+
+    if (selected == null || selected == regionState.selectedIndex) return;
+    try {
+      await context.read<AppProvider>().setFastGpsRegion(selected);
+      await _loadFastGpsRegionState();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to set region: $e'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    }
   }
 
   Future<void> _setFastLocationUpdatesEnabled(bool enabled) async {
@@ -1766,6 +1819,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   trailing: const Icon(Icons.chevron_right),
                   onTap: _editFastLocationChannel,
                 ),
+                if (_fastGpsRegionState != null)
+                  ListTile(
+                    dense: true,
+                    leading: const Icon(Icons.travel_explore, size: 20),
+                    title: const Text('Region scope'),
+                    subtitle: Text(_fastGpsRegionState!.selectedLabel),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: _editFastGpsRegion,
+                  ),
                 ListTile(
                   dense: true,
                   leading: const Icon(Icons.send, size: 20),

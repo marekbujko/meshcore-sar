@@ -25,15 +25,43 @@ class LocationTrackingService {
   static const int _defaultFastLocationActiveCadenceSeconds = 60;
   static const int _minFastLocationActiveCadenceSeconds = 60;
   static const int _maxFastLocationActiveCadenceSeconds = 60;
-  static const Duration _fastLocationSlowInterval = Duration(
-    seconds: 60,
-  );
+  // Moving cadence tiers — identical to the MeshUI firmware
+  // (FAST_GPS_*_INTERVAL_MS / FAST_GPS_SPEED_*_MAX_MPS in MyMesh.cpp).
   static const Duration _fastLocationWalkingInterval = Duration(seconds: 30);
   static const Duration _fastLocationFastInterval = Duration(seconds: 15);
   static const Duration _fastLocationVeryFastInterval = Duration(seconds: 5);
   static const double _fastLocationIdleSpeedMaxMetersPerSecond = 0.75;
   static const double _fastLocationWalkingSpeedMaxMetersPerSecond = 1.8;
   static const double _fastLocationFastSpeedMaxMetersPerSecond = 4.0;
+
+  // Stationary keepalive — a parked node still beacons, but only every 9 min
+  // (FAST_GPS_STATIONARY_*_INTERVAL_MS), not on GPS jitter.
+  static const Duration _fastLocationStationaryInterval = Duration(minutes: 9);
+
+  // Moving/stationary detection: anchor + dwell hysteresis (position-only, no
+  // Doppler), mirroring FAST_GPS_MOVE_* in MyMesh.cpp. A parked node holds an
+  // anchor; jitter inside the radius is absorbed and the stable anchor is
+  // reported, so multipath wander can't paint a fake track.
+  static const double _fastLocationMoveRadiusMeters = 25.0;
+  static const Duration _fastLocationMoveDwell = Duration(seconds: 15);
+  static const Duration _fastLocationStopDwell = Duration(seconds: 60);
+  static const Duration _fastLocationMoveEval = Duration(seconds: 1);
+  static const double _fastLocationSpeedGateMeters = 5.0;
+  static const Duration _fastLocationSpeedRebaseline = Duration(seconds: 8);
+  static const double _fastLocationSpeedGlitchMaxKmh = 300.0;
+
+  // Fix-quality gate. The firmware requires >= 5 satellites (FAST_GPS_MIN_SATS);
+  // Geolocator does not expose a satellite count on all platforms, so we gate on
+  // horizontal accuracy as the closest available proxy.
+  static const double _fastLocationMaxAccuracyMeters = 50.0;
+
+  // Yield ~5s after hearing a peer beacon, to avoid channel collisions
+  // (FAST_GPS_CHANNEL_RX_HOLDOFF_MS).
+  static const Duration _fastLocationRxHoldoff = Duration(seconds: 5);
+
+  // Background keepalive tick when not in active use — cheap, just enough to fire
+  // the 9-min stationary beacon while parked.
+  static const Duration _fastLocationActiveTick = Duration(seconds: 15);
   // ============================================================================
   // Singleton Pattern
   // ============================================================================
@@ -128,7 +156,22 @@ class LocationTrackingService {
   Timer? _fastLocationTimer;
   bool _isFastLocationActiveUse = false;
   DateTime? _lastFastLocationSentAt;
-  Position? _lastFastLocationSentPosition;
+  int? _lastFastLocationSentLatE6;
+  int? _lastFastLocationSentLonE6;
+
+  // Firmware-mirrored fast-GPS motion state (app-fallback path). See
+  // MyMesh::updateGpsStatusCache / maybeSendFastGpsUpdate.
+  int? _fastGpsAnchorLatE6;
+  int? _fastGpsAnchorLonE6;
+  bool _fastGpsRefValid = false;
+  bool _fastGpsIsMoving = false;
+  DateTime? _fastGpsMoveStateSince;
+  DateTime? _fastGpsMoveEvalAt;
+  double _fastGpsSpeedKmh = 0.0;
+  int? _fastGpsSpeedPrevLatE6;
+  int? _fastGpsSpeedPrevLonE6;
+  DateTime? _fastGpsSpeedPrevAt;
+  DateTime? _fastGpsRxHoldoffUntil;
 
   // ============================================================================
   // Callback Properties
@@ -146,8 +189,11 @@ class LocationTrackingService {
   /// Called when tracking state changes
   void Function(bool isTracking)? onTrackingStateChanged;
 
-  /// Called when a fast private GPS update should be sent
-  void Function(Position position, String reason)? onFastLocationUpdate;
+  /// Called when a fast private GPS update should be sent. Carries the resolved
+  /// beacon coordinates (de-jittered anchor when parked) and EMA ground speed in
+  /// km/h, so the caller just encodes and transmits.
+  void Function(double latitude, double longitude, int speedKmh, String reason)?
+  onFastLocationUpdate;
 
   // ============================================================================
   // Initialization
@@ -418,6 +464,7 @@ class LocationTrackingService {
     isTracking = false;
     onTrackingStateChanged?.call(false);
     _refreshFastLocationTimer();
+    _resetFastGpsMotionState();
 
     // Reset first position flag so next connection starts fresh
     _firstPositionSet = false;
@@ -533,6 +580,9 @@ class LocationTrackingService {
 
   Future<void> setFastLocationUpdatesEnabled(bool enabled) async {
     fastLocationUpdatesEnabled = enabled;
+    if (!enabled) {
+      _resetFastGpsMotionState();
+    }
     await saveSettings();
     _refreshFastLocationTimer();
   }
@@ -560,23 +610,35 @@ class LocationTrackingService {
     _refreshFastLocationTimer();
   }
 
+  /// Arms the post-RX send hold-off after hearing a peer's fast-GPS beacon, so
+  /// the phone yields the channel briefly to avoid collisions
+  /// (FAST_GPS_CHANNEL_RX_HOLDOFF_MS). Called by the app's incoming-beacon path.
+  void noteFastGpsBeaconHeard() {
+    _fastGpsRxHoldoffUntil = DateTime.now().add(_fastLocationRxHoldoff);
+  }
+
+  /// Clears all fast-GPS motion/anchor state. Mirrors resetFastGpsShareState.
+  void _resetFastGpsMotionState() {
+    _lastFastLocationSentAt = null;
+    _lastFastLocationSentLatE6 = null;
+    _lastFastLocationSentLonE6 = null;
+    _fastGpsAnchorLatE6 = null;
+    _fastGpsAnchorLonE6 = null;
+    _fastGpsRefValid = false;
+    _fastGpsIsMoving = false;
+    _fastGpsMoveStateSince = null;
+    _fastGpsMoveEvalAt = null;
+    _fastGpsSpeedKmh = 0.0;
+    _fastGpsSpeedPrevLatE6 = null;
+    _fastGpsSpeedPrevLonE6 = null;
+    _fastGpsSpeedPrevAt = null;
+    _fastGpsRxHoldoffUntil = null;
+  }
+
   void _evaluateFastLocationMovement(Position position) {
     if (!fastLocationUpdatesEnabled || fastLocationChannelIdx == null) return;
-    final previous = _lastFastLocationSentPosition;
-    if (previous == null) {
-      _emitFastLocationUpdate(position, reason: 'initial');
-      return;
-    }
-
-    final distance = Geolocator.distanceBetween(
-      previous.latitude,
-      previous.longitude,
-      position.latitude,
-      position.longitude,
-    );
-    if (distance >= fastLocationMovementThresholdMeters) {
-      _emitFastLocationUpdate(position, reason: 'movement');
-    }
+    _updateFastGpsMotionState(position);
+    _maybeSendFastLocation();
   }
 
   void _refreshFastLocationTimer() {
@@ -584,73 +646,211 @@ class LocationTrackingService {
     _fastLocationTimer = null;
     if (!isTracking ||
         !fastLocationUpdatesEnabled ||
-        fastLocationChannelIdx == null ||
-        !_isFastLocationActiveUse) {
+        fastLocationChannelIdx == null) {
       return;
     }
 
-    _fastLocationTimer = Timer.periodic(
-      Duration(seconds: fastLocationActiveCadenceSeconds),
-      (_) {
-        final position = currentPosition;
-        if (position == null) return;
-        _emitFastLocationUpdate(position, reason: 'active_use');
-      },
+    // Always tick (even when parked) so the stationary keepalive fires without a
+    // position-stream event. Tick fast while in active use; otherwise just often
+    // enough to drive the 9-min keepalive cheaply.
+    final period = _isFastLocationActiveUse
+        ? _fastLocationActiveTick
+        : _fastLocationStationaryInterval;
+    _fastLocationTimer = Timer.periodic(period, (_) => _maybeSendFastLocation());
+  }
+
+  /// Updates the EMA ground speed and the moving/stationary anchor state machine
+  /// from a fresh fix. Faithful port of MyMesh::updateGpsStatusCache.
+  void _updateFastGpsMotionState(Position position) {
+    // Fix-quality gate (firmware: satellitesCount >= FAST_GPS_MIN_SATS).
+    final accuracy = position.accuracy;
+    if (accuracy.isFinite &&
+        accuracy > 0 &&
+        accuracy > _fastLocationMaxAccuracyMeters) {
+      return;
+    }
+
+    final now = DateTime.now();
+    final latE6 = (position.latitude * 1e6).round();
+    final lonE6 = (position.longitude * 1e6).round();
+
+    // Ground speed from successive fixes, EMA-smoothed (0.4 prev / 0.6 inst).
+    if (_fastGpsSpeedPrevLatE6 == null || _fastGpsSpeedPrevAt == null) {
+      _fastGpsSpeedPrevLatE6 = latE6;
+      _fastGpsSpeedPrevLonE6 = lonE6;
+      _fastGpsSpeedPrevAt = now;
+    } else {
+      final distM = _distanceE6(
+        _fastGpsSpeedPrevLatE6!,
+        _fastGpsSpeedPrevLonE6!,
+        latE6,
+        lonE6,
+      );
+      final dtMs = now.difference(_fastGpsSpeedPrevAt!).inMilliseconds;
+      if (distM >= _fastLocationSpeedGateMeters && dtMs >= 1000) {
+        final instKmh = (distM / 1000.0) / (dtMs / 3600000.0);
+        if (instKmh <= _fastLocationSpeedGlitchMaxKmh) {
+          _fastGpsSpeedKmh = _fastGpsSpeedKmh * 0.4 + instKmh * 0.6;
+        }
+        _fastGpsSpeedPrevLatE6 = latE6;
+        _fastGpsSpeedPrevLonE6 = lonE6;
+        _fastGpsSpeedPrevAt = now;
+      } else if (dtMs >= _fastLocationSpeedRebaseline.inMilliseconds) {
+        _fastGpsSpeedKmh = 0.0;
+        _fastGpsSpeedPrevLatE6 = latE6;
+        _fastGpsSpeedPrevLonE6 = lonE6;
+        _fastGpsSpeedPrevAt = now;
+      }
+    }
+
+    // Moving/stationary state machine (anchor + dwell hysteresis), ~1 Hz.
+    final evalAt = _fastGpsMoveEvalAt;
+    if (evalAt != null && now.difference(evalAt) < _fastLocationMoveEval) {
+      return;
+    }
+    _fastGpsMoveEvalAt = now;
+
+    if (!_fastGpsRefValid) {
+      _fastGpsAnchorLatE6 = latE6;
+      _fastGpsAnchorLonE6 = lonE6;
+      _fastGpsRefValid = true;
+      _fastGpsMoveStateSince = null;
+      _fastGpsIsMoving = false;
+      return;
+    }
+
+    final refDist = _distanceE6(
+      _fastGpsAnchorLatE6!,
+      _fastGpsAnchorLonE6!,
+      latE6,
+      lonE6,
+    );
+    if (!_fastGpsIsMoving) {
+      if (refDist > _fastLocationMoveRadiusMeters) {
+        if (_fastGpsMoveStateSince == null) {
+          _fastGpsMoveStateSince = now;
+        } else if (now.difference(_fastGpsMoveStateSince!) >=
+            _fastLocationMoveDwell) {
+          _fastGpsIsMoving = true;
+          _fastGpsAnchorLatE6 = latE6;
+          _fastGpsAnchorLonE6 = lonE6;
+          _fastGpsMoveStateSince = null;
+        }
+      } else {
+        _fastGpsMoveStateSince = null;
+        // Track slow GPS bias so cumulative drift never reaches the radius.
+        _fastGpsAnchorLatE6 =
+            _fastGpsAnchorLatE6! + ((latE6 - _fastGpsAnchorLatE6!) ~/ 8);
+        _fastGpsAnchorLonE6 =
+            _fastGpsAnchorLonE6! + ((lonE6 - _fastGpsAnchorLonE6!) ~/ 8);
+      }
+    } else {
+      if (refDist > _fastLocationMoveRadiusMeters) {
+        _fastGpsAnchorLatE6 = latE6;
+        _fastGpsAnchorLonE6 = lonE6;
+        _fastGpsMoveStateSince = null;
+      } else if (_fastGpsMoveStateSince == null) {
+        _fastGpsMoveStateSince = now;
+      } else if (now.difference(_fastGpsMoveStateSince!) >=
+          _fastLocationStopDwell) {
+        _fastGpsIsMoving = false;
+        _fastGpsAnchorLatE6 = latE6;
+        _fastGpsAnchorLonE6 = lonE6;
+        _fastGpsMoveStateSince = null;
+      }
+    }
+  }
+
+  /// Decides whether to emit a beacon now, mirroring maybeSendFastGpsUpdate:
+  /// moving → speed-tier cadence once past the movement threshold; parked →
+  /// flat 9-min keepalive of the stable anchor. Honours the RX hold-off.
+  void _maybeSendFastLocation() {
+    if (!fastLocationUpdatesEnabled || fastLocationChannelIdx == null) return;
+    final position = currentPosition;
+    if (position == null) return;
+    // No valid anchor yet means no good fix has landed — don't beacon (the
+    // firmware likewise bails until it has a usable fix).
+    if (!_fastGpsRefValid) return;
+
+    final int reportLatE6;
+    final int reportLonE6;
+    if (_fastGpsIsMoving) {
+      reportLatE6 = (position.latitude * 1e6).round();
+      reportLonE6 = (position.longitude * 1e6).round();
+    } else {
+      // Parked: report the stable anchor, not the wander.
+      reportLatE6 = _fastGpsAnchorLatE6!;
+      reportLonE6 = _fastGpsAnchorLonE6!;
+    }
+
+    final now = DateTime.now();
+    final lastAt = _lastFastLocationSentAt;
+    bool shouldSend = lastAt == null || _lastFastLocationSentLatE6 == null;
+    String reason = 'initial';
+    if (!shouldSend) {
+      if (_fastGpsIsMoving) {
+        final distM = _distanceE6(
+          _lastFastLocationSentLatE6!,
+          _lastFastLocationSentLonE6!,
+          reportLatE6,
+          reportLonE6,
+        );
+        if (distM > fastLocationMovementThresholdMeters) {
+          final elapsed = now.difference(lastAt!);
+          final interval = _movingIntervalForSpeedKmh(_fastGpsSpeedKmh);
+          shouldSend = elapsed >= interval;
+          reason = 'movement';
+        }
+      } else if (now.difference(lastAt!) >= _fastLocationStationaryInterval) {
+        shouldSend = true;
+        reason = 'stationary';
+      }
+    }
+    if (!shouldSend) return;
+
+    // Yield the channel briefly after hearing a peer beacon.
+    final holdoff = _fastGpsRxHoldoffUntil;
+    if (holdoff != null) {
+      if (now.isBefore(holdoff)) return;
+      _fastGpsRxHoldoffUntil = null;
+    }
+
+    _lastFastLocationSentLatE6 = reportLatE6;
+    _lastFastLocationSentLonE6 = reportLonE6;
+    _lastFastLocationSentAt = now;
+
+    final speedKmh = _fastGpsSpeedKmh < 0
+        ? 0
+        : (_fastGpsSpeedKmh > 255.0 ? 255 : (_fastGpsSpeedKmh + 0.5).floor());
+    onFastLocationUpdate?.call(
+      reportLatE6 / 1e6,
+      reportLonE6 / 1e6,
+      speedKmh,
+      reason,
     );
   }
 
-  void _emitFastLocationUpdate(Position position, {required String reason}) {
-    if (!fastLocationUpdatesEnabled || fastLocationChannelIdx == null) return;
-
-    final now = DateTime.now();
-    final previous = _lastFastLocationSentPosition;
-    final previousTime = _lastFastLocationSentAt;
-    if (previous != null && previousTime != null) {
-      final distance = Geolocator.distanceBetween(
-        previous.latitude,
-        previous.longitude,
-        position.latitude,
-        position.longitude,
-      );
-      final elapsedMs = now.difference(previousTime).inMilliseconds;
-      final minimumInterval = _fastLocationMinimumIntervalFor(
-        distanceMeters: distance,
-        elapsedMs: elapsedMs,
-      );
-      if (elapsedMs < minimumInterval.inMilliseconds) {
-        return;
-      }
-      if (distance < 1.0 && elapsedMs < 3000) {
-        return;
-      }
-    } else if (previousTime != null &&
-        now.difference(previousTime) < _fastLocationSlowInterval) {
-      return;
+  Duration _movingIntervalForSpeedKmh(double speedKmh) {
+    final speedMps = speedKmh / 3.6;
+    if (speedMps < _fastLocationIdleSpeedMaxMetersPerSecond) {
+      return _fastLocationStationaryInterval;
     }
-
-    _lastFastLocationSentPosition = position;
-    _lastFastLocationSentAt = now;
-    onFastLocationUpdate?.call(position, reason);
-  }
-
-  Duration _fastLocationMinimumIntervalFor({
-    required double distanceMeters,
-    required int elapsedMs,
-  }) {
-    if (elapsedMs <= 0) {
-      return _fastLocationSlowInterval;
-    }
-    final speedMetersPerSecond = distanceMeters / (elapsedMs / 1000.0);
-    if (speedMetersPerSecond < _fastLocationIdleSpeedMaxMetersPerSecond) {
-      return _fastLocationSlowInterval;
-    }
-    if (speedMetersPerSecond < _fastLocationWalkingSpeedMaxMetersPerSecond) {
+    if (speedMps < _fastLocationWalkingSpeedMaxMetersPerSecond) {
       return _fastLocationWalkingInterval;
     }
-    if (speedMetersPerSecond < _fastLocationFastSpeedMaxMetersPerSecond) {
+    if (speedMps < _fastLocationFastSpeedMaxMetersPerSecond) {
       return _fastLocationFastInterval;
     }
     return _fastLocationVeryFastInterval;
+  }
+
+  double _distanceE6(int latA, int lonA, int latB, int lonB) {
+    return Geolocator.distanceBetween(
+      latA / 1e6,
+      lonA / 1e6,
+      latB / 1e6,
+      lonB / 1e6,
+    );
   }
 
   // ============================================================================

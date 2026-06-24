@@ -762,10 +762,11 @@ void main() {
           senderKey6: '323334353637',
           latitude: 44.123456,
           longitude: 13.654321,
-          timestampSeconds: 1700001234,
+          speedKmh: 12,
         ),
       );
 
+      final nowSeconds = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final updated = provider.findContactByKey(publicKey)!;
       expect(updated.telemetry, isNotNull);
       expect(updated.telemetry!.gpsLocation, isNotNull);
@@ -780,8 +781,9 @@ void main() {
       expect(updated.telemetry!.batteryMilliVolts, isNotNull);
       expect(updated.advLat, equals((44.123456 * 1e6).round()));
       expect(updated.advLon, equals((13.654321 * 1e6).round()));
-      expect(updated.lastAdvert, equals(1700001234));
-      expect(updated.lastMod, equals(1700001234));
+      // The beacon carries no timestamp; the receiver stamps its own RX time.
+      expect(updated.lastAdvert, closeTo(nowSeconds, 5));
+      expect(updated.lastMod, closeTo(nowSeconds, 5));
       expect(
         provider.estimatedLocationFor(updated.publicKeyHex),
         isNotNull,
@@ -804,7 +806,7 @@ void main() {
           senderKey6: '010203040506',
           latitude: 10,
           longitude: 20,
-          timestampSeconds: 99,
+          speedKmh: 0,
         ),
       );
       final after = provider.findContactByKey(publicKey)!;
